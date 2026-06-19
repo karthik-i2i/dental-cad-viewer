@@ -1,8 +1,12 @@
 .container {
-  width: min(1200px, 100%);
-  margin: 18px auto 44px;
+  height: 100vh;
+  width: 100%;
+  padding: 12px;
   display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   gap: 12px;
+  overflow: hidden;
+  box-sizing: border-box;
   animation: fadeUp 420ms ease both;
 }
 
@@ -138,11 +142,15 @@
   border: 1px solid rgba(13, 46, 90, 0.22);
   background: #07111f;
   box-shadow: var(--shadow-lg);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .viewerInner {
   position: relative;
-  height: 560px;
+  flex: 1;
+  min-height: 0;
 }
 
 .emptyState {
@@ -491,4 +499,45 @@
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+.viewerLayout {
+  display: flex;
+  height: 100%;
+}
+
+.viewerPane {
+  flex: 1;
+  min-width: 0;
+}
+
+.filePanel {
+  width: 260px;
+  flex-shrink: 0;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  padding: 16px;
+
+  border-left: 1px solid rgba(255,255,255,0.1);
+
+  background: #0d1725;
+  color: rgba(255,255,255,0.86);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.filePanel {
+  scroll-behavior: smooth;
+}
+
+.filePanel::-webkit-scrollbar {
+  width: 8px;
+}
+
+.filePanel::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.25);
+  border-radius: 999px;
 }

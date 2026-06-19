@@ -1,6 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import STLViewer from './STLViewerR3F';
 import styles from './ResultViewer.module.css';
+import JSZip from 'jszip';
+
+const STL_FILES = [
+  { id: 1, name: "1.stl", path: "/models/1_1.ply" },
+  { id: 2, name: "2.stl", path: "/models/1_2.ply" },
+  { id: 3, name: "3.stl", path: "/models/2_1.stl" },
+  { id: 4, name: "4.stl", path: "/models/2_2.stl" },
+  { id: 5, name: "5.stl", path: "/models/3_1.ply" },
+  { id: 6, name: "6.stl", path: "/models/3_2.ply" },
+  { id: 7, name: "7.stl", path: "/models/4_1.stl" },
+  { id: 8, name: "8.stl", path: "/models/4_2.stl" },
+  { id: 9, name: "9.stl", path: "/models/5_1.stl" },
+  { id: 10, name: "10.stl", path: "/models/5_2.stl" },
+  { id: 11, name: "11.stl", path: "/models/6_1.stl" },
+  { id: 12, name: "12.stl", path: "/models/6_2.stl" },
+  { id: 13, name: "13.stl", path: "/models/7.stl" },
+  { id: 14, name: "14.stl", path: "/models/8.stl" },
+  { id: 15, name: "15.stl", path: "/models/9.stl" }
+];
 
 const SHIELD_LABELS = {
   lateral_left:  'Lateral Left',
@@ -22,8 +41,6 @@ const PROGRESS_STEPS = [
 const ResultViewer = ({ resultUrl, scanData, onStartOver, onSetResultUrl, sampleResultUrl }) => {
   const originalFile  = scanData?.scan1;
   const secondFile    = scanData?.scan2;
-  const toothPosition = scanData?.toothType;
-  const stentOption   = scanData?.stentOption;
   const shieldOption  = scanData?.shieldOption; // ← new
 
   const formatOption = (value) => {
@@ -38,15 +55,92 @@ const ResultViewer = ({ resultUrl, scanData, onStartOver, onSetResultUrl, sample
   const [viewerKey,   setViewerKey]   = useState(0);
   const [isLoading,   setIsLoading]   = useState(false);
   const [progressIndex, setProgressIndex] = useState(0);
+  const [selectedFiles, setSelectedFiles] = useState([
+    STL_FILES[STL_FILES.length - 1]
+  ]);
+
+  const selectedPaths = React.useMemo(
+    () => selectedFiles.map(f => f.path),
+    [selectedFiles]
+  );
 
   const accentColor = wireframe ? '#3E4A5A' : '#E8D5C3';
 
   const handleReset = () => setViewerKey(k => k + 1);
 
+  const [isDownloading, setIsDownloading] = useState(false);
+
   const canRender = Boolean(resultUrl);
   const isWaitingForResult = Boolean(scanData && !resultUrl);
   const progressPercentage = Math.min(100, Math.round((progressIndex / PROGRESS_STEPS.length) * 100));
   const currentStep = PROGRESS_STEPS[Math.min(progressIndex, PROGRESS_STEPS.length - 1)] || 'Preparing AI generation...';
+
+  const getZipFileName = () => {
+    const now = new Date();
+    const pad = (n, len = 2) => String(n).padStart(len, '0');
+
+    return `SelectedModels_(${selectedFiles.length})_${
+      now.getFullYear()
+    }-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${
+      pad(now.getHours())
+    }-${pad(now.getMinutes())}-${pad(now.getSeconds())}-${
+      pad(now.getMilliseconds(), 3)
+    }.zip`; 
+  };
+
+  const handleFileToggle = (file) => {
+    setSelectedFiles((prev) => {
+      const alreadySelected = prev.some(
+        (f) => f.id === file.id
+      );
+
+      if (alreadySelected) {
+        if (prev.length === 1) return prev;
+
+        return prev.filter((f) => f.id !== file.id);
+      }
+
+      return [...prev, file];
+    });
+  };
+
+  const handleDownload = async () => {
+    setIsDownloading(true);
+
+    try {
+      const zip = new JSZip();
+
+      for (const file of selectedFiles) {
+        const response = await fetch(file.path);
+
+        if (!response.ok) continue;
+
+        const blob = await response.blob();
+
+        zip.file(
+          file.path.split('/').pop(),
+          blob
+        );
+      }
+
+      const zipBlob = await zip.generateAsync({
+        type: 'blob'
+      });
+
+      const url = URL.createObjectURL(zipBlob);
+
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = getZipFileName();
+      link.click();
+
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   useEffect(() => {
     if (!scanData || canRender) {
@@ -109,16 +203,37 @@ const ResultViewer = ({ resultUrl, scanData, onStartOver, onSetResultUrl, sample
                   </div>
                 </div>
               )}
-              <STLViewer
-                key={viewerKey}
-                stlUrl={resultUrl}
-                accentColor={accentColor}
-                background="#07111F"
-                autoRotate={autoRotate}
-                wireframe={wireframe}
-                showGrid={false}
-                enablePan={true}
-              />
+              <div className={styles.viewerLayout}>
+
+                <div className={styles.viewerPane}>
+                  <STLViewer
+                    key={viewerKey}
+                    stlUrls={selectedPaths}
+                    accentColor={accentColor}
+                    background="#07111F"
+                    autoRotate={autoRotate}
+                    wireframe={wireframe}
+                    showGrid={false}
+                    enablePan={true}
+                  />
+                </div>
+
+                <div className={styles.filePanel}>
+                  {STL_FILES.map(file => (
+                    <label key={file.id} className={styles.fileItem}>
+                      <input
+                        type="checkbox"
+                        checked={selectedFiles.some(
+                          (f) => f.id === file.id
+                        )}
+                        onChange={() => handleFileToggle(file)}
+                      />
+                      {file.name}
+                    </label>
+                  ))}
+                </div>
+
+              </div>
             </>
           ) : isWaitingForResult ? (
             <div className={styles.progressState}>
@@ -159,11 +274,11 @@ const ResultViewer = ({ resultUrl, scanData, onStartOver, onSetResultUrl, sample
             </div>
           )}
 
-          {/* Corner watermark */}
+          {/* Corner watermark
           <div className={styles.watermark}>
             <LogoMark />
             MedScan 3D
-          </div>
+          </div> */}
         </div>
 
         {/* ── Toolbar ──────────────────────────────────────────────────────── */}
@@ -208,8 +323,8 @@ const ResultViewer = ({ resultUrl, scanData, onStartOver, onSetResultUrl, sample
         <InfoItem label="Format"     value="STL Mesh" />
         <InfoItem label="Status"     value="AI Generated" highlight />
         <div className={styles.downloadWrap}>
-          <button className={styles.downloadBtn} disabled={!canRender}>
-            <DownloadIcon /> Download STL
+          <button className={styles.downloadBtn} disabled={!canRender || isDownloading} onClick={handleDownload}>
+            <DownloadIcon />{isDownloading ? 'Preparing ZIP...' : ` Download STL (${selectedFiles.length})`}
           </button>
         </div>
       </div>

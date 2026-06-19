@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useCallback } from 'react';
 import * as THREE from 'three';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
+import { PLYLoader } from 'three/examples/jsm/loaders/PLYLoader';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
 /**
@@ -12,6 +13,7 @@ const STLViewerR3F = ({
   scan1, 
   scan2, 
   stlUrl,
+  stlUrls = [],
   autoRotate = true,
   wireframe = false,
   accentColor = '#E8D5C3',
@@ -30,14 +32,26 @@ const STLViewerR3F = ({
     if (s.resizeObs)   s.resizeObs.disconnect();
     if (s.renderer) {
       s.renderer.dispose();
-      if (mountRef.current && s.renderer.domElement.parentNode === mountRef.current) {
+
+      if (s.renderer.forceContextLoss) {
+        s.renderer.forceContextLoss();
+      }
+
+      if (
+        mountRef.current &&
+        s.renderer.domElement.parentNode === mountRef.current
+      ) {
         mountRef.current.removeChild(s.renderer.domElement);
       }
     }
     if (s.meshes) {
       s.meshes.forEach(m => {
         m.geometry.dispose();
-        m.material.dispose();
+        if (Array.isArray(m.material)) {
+          m.material.forEach(mat => mat.dispose());
+        } else {
+          m.material.dispose();
+        }
         if (s.scene) s.scene.remove(m);
       });
     }
@@ -68,7 +82,7 @@ const STLViewerR3F = ({
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(w, h);
     renderer.shadowMap.enabled   = true;
-    renderer.shadowMap.type      = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type      = THREE.PCFShadowMap;
     // Use LinearToneMapping + exposure 1.0 for neutral, clinically accurate colour
     renderer.toneMapping         = THREE.LinearToneMapping;
     renderer.toneMappingExposure = 1.0;
@@ -98,35 +112,16 @@ const STLViewerR3F = ({
     let   combinedMaxDim = 0;
 
     geometries.forEach(({ geom, color }, idx) => {
-      geom.computeBoundingBox();
-      const bbox   = geom.boundingBox;
-      const center = new THREE.Vector3();
-      bbox.getCenter(center);
-      geom.translate(-center.x, -center.y, -center.z);
-
-      const size   = new THREE.Vector3();
-      bbox.getSize(size);
-      const maxDim = Math.max(size.x, size.y, size.z) || 1;
-      const scale  = 100 / maxDim;
-      geom.scale(scale, scale, scale);
-      combinedMaxDim = Math.max(combinedMaxDim, 100); // normalised = always 100
-
-      // Side-by-side: leave a 20-unit gap between the two models
-      const offsetX = geometries.length > 1 ? (idx === 0 ? -60 : 60) : 0;
-
-      // ── Clinical material: bright matte, no tint, DoubleSide ─────────────
       const material = new THREE.MeshStandardMaterial({
-        color:     new THREE.Color(accentColor),
-        metalness: 0.0,
-        roughness: 0.65,   // matte → every ridge and groove casts a readable shadow
-        side:      THREE.DoubleSide,
-        wireframe: wireframe,
+        color: new THREE.Color(accentColor),
+        metalness: 0,
+        roughness: 0.65,
+        side: THREE.DoubleSide,
+        wireframe,
       });
-
       const mesh = new THREE.Mesh(geom, material);
-      mesh.castShadow    = true;
+      mesh.castShadow = true;
       mesh.receiveShadow = true;
-      mesh.position.x    = offsetX;
       scene.add(mesh);
       meshes.push(mesh);
     });
@@ -157,13 +152,28 @@ const STLViewerR3F = ({
     // Ambient: lifts the floor so no part is pitch-black
     scene.add(new THREE.AmbientLight(0xffffff, 0.6));
 
-    // ── Camera position: computed from actual normalised size ───────────────
-    //    dist formula mirrors STLViewer.jsx: maxDim * scale * 1.8
-    //    With two models side-by-side the effective spread is ~220 units
-    const spread = geometries.length > 1 ? 220 : 100;
-    const dist   = spread * 1.8;
-    camera.position.set(dist * 0.7, dist * 0.5, dist);
-    camera.lookAt(0, 0, 0);
+    // ── Compute combined bounding box for all meshes ───────────────────────
+    const box = new THREE.Box3();
+    meshes.forEach(mesh => {
+      box.expandByObject(mesh);
+    });
+    const size = new THREE.Vector3();
+    const center = new THREE.Vector3();
+    box.getSize(size);
+    box.getCenter(center);
+    const maxDim = Math.max(
+      size.x,
+      size.y,
+      size.z
+    );
+    const distance = Math.max(maxDim * 2.2, 100);
+    camera.position.set(
+      center.x + distance * 0.7,
+      center.y + distance * 0.5,
+      center.z + distance
+    );
+    camera.lookAt(center);
+    controls.target.copy(center);
     controls.update();
 
     // ── Resize observer ────────────────────────────────────────────────────
@@ -188,34 +198,61 @@ const STLViewerR3F = ({
     animate();
 
     sceneRef.current = { scene, camera, renderer, controls, meshes, resizeObs };
-  }, [cleanup]);
+  }, [cleanup, background, accentColor, enablePan, autoRotate]);
 
   // ── Load files then fire initScene ────────────────────────────────────────
   useEffect(() => {
-    if (!scan1 && !stlUrl) {
+    if (!scan1 && !stlUrl && stlUrls.length === 0) {
       cleanup();
       return;
     }
 
-    const loader  = new STLLoader();
+    const stlLoader = new STLLoader();
+    const plyLoader = new PLYLoader();
 
     // URL-based mode (final AI result)
-    if (stlUrl) {
-      console.log('STLViewerR3F: Loading from URL:', stlUrl);
-      loader.load(
-        stlUrl,
-        (geometry) => {
-          console.log('STLViewerR3F: URL loaded successfully');
-          geometry.computeVertexNormals();
-          initScene([{ geom: geometry, color: accentColor }]);
-        },
-        (progress) => {
-          console.log('STLViewerR3F: Loading', Math.round((progress.loaded / progress.total) * 100) + '%');
-        },
-        (err) => {
-          console.error('STLViewerR3F: URL load error:', err, stlUrl);
-        }
-      );
+    if (stlUrls.length > 0) {
+      const results = [];
+      let finished = 0;
+
+      stlUrls.forEach((url, index) => {
+        const isPly = url.toLowerCase().endsWith('.ply');
+
+        const loader = isPly
+          ? plyLoader
+          : stlLoader;
+
+        loader.load(
+          url,
+          (geometry) => {
+            if (!geometry.attributes.normal) {
+              geometry.computeVertexNormals();
+            }
+
+            results[index] = {
+              geom: geometry,
+              color: accentColor
+            };
+
+            finished++;
+
+            if (finished === stlUrls.length) {
+              initScene(results);
+            }
+          },
+          undefined,
+          (err) => {
+            console.error('Load error', url, err);
+
+            finished++;
+
+            if (finished === stlUrls.length) {
+              initScene(results.filter(Boolean));
+            }
+          }
+        );
+      });
+
       return cleanup;
     }
 
@@ -232,7 +269,10 @@ const STLViewerR3F = ({
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
-          const geom = loader.parse(e.target.result);
+          const isPly = file.name.toLowerCase().endsWith('.ply');
+          const geom = isPly
+            ? plyLoader.parse(e.target.result)
+            : stlLoader.parse(e.target.result);
           geom.computeVertexNormals();
           results[idx] = { geom, color };
           finished++;
@@ -248,7 +288,7 @@ const STLViewerR3F = ({
     });
 
     return cleanup;
-  }, [stlUrl, scan1, scan2, initScene, cleanup, accentColor]);
+  }, [stlUrl, stlUrls, scan1, scan2, initScene, cleanup, accentColor]);
 
   // ── Update wireframe mode when toggled ──────────────────────────────────
   useEffect(() => {

@@ -55,6 +55,7 @@ const UploadStep = ({ onConfirm }) => {
 
   const inputRef  = useRef();
   const input2Ref = useRef();
+  const canProceed = Boolean(shieldOption);
 
   // ── Validation ──────────────────────────────────────────────────────────────
   const validateFile = (f) => {
@@ -93,6 +94,7 @@ const UploadStep = ({ onConfirm }) => {
 
   // ── Confirm ─────────────────────────────────────────────────────────────────
   const handleConfirm = () => {
+    if (!shieldOption) return; // should not happen due to button disable
     if (typeof onConfirm === 'function') {
       onConfirm({ shieldOption, scan1: file1, scan2: file2 });
     }
@@ -273,8 +275,8 @@ const UploadStep = ({ onConfirm }) => {
               <button
                 className={styles.confirmBtn}
                 onClick={handleConfirm}
-                // disabled={!toothType}
-                // title={!toothType ? 'Please select a tooth position first' : undefined}
+                disabled={!canProceed}
+                title={!canProceed ? 'Please select a stentra type first' : undefined}
               >
                 Confirm & Process
                 <ArrowIcon />
