@@ -1,7 +1,7 @@
 import React from "react";
-import LoginStep from "./components/LoginStep";
-import RegisterStep from "./components/RegisterStep";
-import UploadStep from "./components/UploadStep";
+import LoginStep from "./components/Login";
+import RegisterStep from "./components/Register";
+import UploadStep from "./components/Upload";
 import ResultViewer from "./components/ResultViewer";
 
 function App() {
