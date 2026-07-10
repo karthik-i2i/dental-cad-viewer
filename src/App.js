@@ -3,6 +3,7 @@ import LoginStep from "./components/Login";
 import RegisterStep from "./components/Register";
 import UploadStep from "./components/Upload";
 import ResultViewer from "./components/ResultViewer";
+import "./App.css";
 
 function App() {
   const [step, setStep] = React.useState("login"); // 'login' | 'register' | 'upload' | 'result'
@@ -50,7 +51,7 @@ function App() {
   };
 
   return (
-    <div>
+    <div className="appShell">
       {step === "login" ? (
         <LoginStep onLogin={handleLogin} onRegister={handleOpenRegister} />
       ) : step === "register" ? (
@@ -60,42 +61,24 @@ function App() {
         />
       ) : (
         <>
-          <div style={{ 
-            padding: "16px 20px", 
-            background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            borderBottom: "2px solid #e2e8f0"
-          }}>
-            <h2 style={{ margin: 0, color: "#1ed7c3", fontSize: "20px", fontWeight: "700" }}>
+          <div className="appHeader">
+            <h2 className="appTitle">
               Kallisio Stentra Design System
             </h2>
-            <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-              <span style={{ color: "#94a3b8", fontSize: "14px" }}>
+            <div className="appHeaderRight">
+              <span className="appWelcome">
                 Welcome, {user?.userName || 'User'}
               </span>
               <button
+                type="button"
                 onClick={handleLogout}
-                style={{
-                  padding: "8px 16px",
-                  background: "#ef4444",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "6px",
-                  cursor: "pointer",
-                  fontSize: "14px",
-                  fontWeight: "600",
-                  transition: "all 0.3s ease"
-                }}
-                onMouseEnter={(e) => e.target.style.background = "#dc2626"}
-                onMouseLeave={(e) => e.target.style.background = "#ef4444"}
+                className="logoutBtn"
               >
                 Logout
               </button>
             </div>
           </div>
-          <div style={{ padding: "20px" }}>
+          <div className="appContent">
             {step === "upload" ? (
               <UploadStep onConfirm={handleConfirm} />
             ) : (

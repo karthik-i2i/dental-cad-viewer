@@ -1,25 +1,25 @@
 .container {
   height: 100vh;
   width: 100%;
-  padding: 12px;
+  padding: var(--space-3);
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
-  gap: 12px;
+  gap: var(--space-3);
   overflow: hidden;
   box-sizing: border-box;
-  animation: fadeUp 420ms ease both;
+  animation: fadeUp var(--transition-enter) ease both;
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .headerLeft {
   display: grid;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .statusBadge {
@@ -29,10 +29,10 @@
   padding: 8px 12px;
   border-radius: 999px;
   width: fit-content;
-  background: rgba(29, 184, 122, 0.12);
-  border: 1px solid rgba(29, 184, 122, 0.22);
-  color: #0b6a45;
-  font-weight: 800;
+  background: rgba(26, 159, 110, 0.12);
+  border: 1px solid rgba(26, 159, 110, 0.22);
+  color: var(--success);
+  font-weight: 600;
   font-size: 12px;
   letter-spacing: 0.02em;
   text-transform: uppercase;
@@ -43,35 +43,44 @@
   height: 8px;
   border-radius: 99px;
   background: var(--success);
-  box-shadow: 0 0 0 4px rgba(29, 184, 122, 0.16);
+  box-shadow: 0 0 0 4px rgba(26, 159, 110, 0.16);
 }
 
 .headerTitle {
   font-size: 22px;
+  font-weight: 700;
   letter-spacing: -0.02em;
+  color: var(--text-primary);
 }
 
 .startOverBtn {
   border: 1px solid var(--border-strong);
   background: var(--bg-surface);
   padding: 10px 12px;
-  border-radius: 14px;
-  font-weight: 800;
+  border-radius: var(--radius-lg);
+  font-weight: 600;
+  font-family: inherit;
   cursor: pointer;
   display: inline-flex;
   gap: 10px;
   align-items: center;
   color: var(--text-primary);
   box-shadow: var(--shadow-sm);
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.startOverBtn:hover {
+  background: var(--bg-elevated);
+  border-color: var(--blue-500);
 }
 
 /* URL Bar */
 .urlBar {
   display: flex;
-  gap: 12px;
+  gap: var(--space-3);
   align-items: center;
   justify-content: space-between;
-  padding: 12px 14px;
+  padding: var(--space-3) 14px;
   border-radius: var(--radius-xl);
   border: 1px solid var(--border);
   background: var(--bg-surface);
@@ -82,11 +91,11 @@
   flex: 1;
   min-width: 240px;
   display: grid;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .urlLabel {
-  font-weight: 800;
+  font-weight: 600;
   font-size: 12px;
   color: var(--text-muted);
   letter-spacing: 0.02em;
@@ -97,11 +106,17 @@
   width: 100%;
   border: 1px solid var(--border-strong);
   background: var(--bg-elevated);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   padding: 10px 12px;
   outline: none;
-  font-weight: 700;
+  font-weight: 600;
+  font-family: inherit;
   color: var(--text-primary);
+}
+
+.urlInput:focus {
+  border-color: var(--teal-400);
+  box-shadow: var(--focus-ring);
 }
 
 .urlActions {
@@ -111,13 +126,14 @@
 }
 
 .urlBtn {
-  border: 1px solid rgba(43, 127, 224, 0.25);
+  border: 1px solid rgba(26, 107, 154, 0.25);
   background: linear-gradient(180deg, var(--blue-500), var(--blue-700));
   color: white;
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   padding: 10px 12px;
   cursor: pointer;
-  font-weight: 900;
+  font-weight: 600;
+  font-family: inherit;
 }
 
 .urlBtn:disabled {
@@ -129,18 +145,19 @@
   border: 1px solid var(--border-strong);
   background: var(--bg-elevated);
   color: var(--text-primary);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   padding: 10px 12px;
   cursor: pointer;
-  font-weight: 900;
+  font-weight: 600;
+  font-family: inherit;
 }
 
 /* Viewer */
 .viewerContainer {
   border-radius: var(--radius-xl);
   overflow: hidden;
-  border: 1px solid rgba(13, 46, 90, 0.22);
-  background: #07111f;
+  border: 1px solid rgba(15, 36, 56, 0.18);
+  background: var(--viewer-stage);
   box-shadow: var(--shadow-lg);
   min-height: 0;
   display: flex;
@@ -158,67 +175,42 @@
   display: grid;
   place-content: center;
   gap: 10px;
-  padding: 24px;
+  padding: var(--space-5);
   text-align: center;
   color: rgba(255, 255, 255, 0.86);
   background:
-    radial-gradient(900px 300px at 10% 0%, rgba(59, 158, 255, 0.14), transparent 60%),
-    radial-gradient(700px 260px at 90% 100%, rgba(45, 196, 196, 0.12), transparent 55%);
+    radial-gradient(900px 300px at 10% 0%, rgba(26, 107, 154, 0.18), transparent 60%),
+    radial-gradient(700px 260px at 90% 100%, rgba(29, 184, 176, 0.12), transparent 55%);
 }
 
 .progressState {
   height: 100%;
   display: grid;
   place-items: center;
-  padding: 24px;
+  padding: var(--space-5);
   color: rgba(255, 255, 255, 0.92);
   background:
-    radial-gradient(900px 300px at 10% 0%, rgba(59, 158, 255, 0.14), transparent 60%),
-    radial-gradient(700px 260px at 90% 100%, rgba(45, 196, 196, 0.12), transparent 55%);
+    radial-gradient(900px 300px at 10% 0%, rgba(26, 107, 154, 0.18), transparent 60%),
+    radial-gradient(700px 260px at 90% 100%, rgba(29, 184, 176, 0.12), transparent 55%);
 }
 
 .progressHeader {
   display: grid;
-  gap: 8px;
+  gap: var(--space-2);
   text-align: center;
   max-width: 640px;
 }
 
 .progressTitle {
   font-size: 22px;
-  font-weight: 900;
+  font-weight: 700;
   letter-spacing: -0.02em;
 }
 
 .progressSub {
   color: rgba(255, 255, 255, 0.72);
   line-height: 1.6;
-  font-weight: 600;
-}
-
-.progressBar {
-  width: min(640px, 100%);
-  height: 14px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.12);
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.10);
-}
-
-.progressBarFill {
-  height: 100%;
-  background: linear-gradient(90deg, #2dc4c4, #1f8fff);
-  transition: width 320ms ease;
-}
-
-.progressCurrent {
-  display: grid;
-  gap: 6px;
-  text-align: center;
-  max-width: 640px;
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.78);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .progressBar {
@@ -231,6 +223,22 @@
   position: relative;
 }
 
+.progressBarFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--teal-400), var(--blue-500));
+  transition: width 320ms ease;
+}
+
+.progressCurrent {
+  display: grid;
+  gap: 6px;
+  text-align: center;
+  max-width: 640px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.78);
+  font-weight: 600;
+}
+
 .progressBarLabel {
   position: absolute;
   inset: 0;
@@ -240,7 +248,7 @@
   padding: 0 18px;
   text-align: center;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 600;
   color: white;
   white-space: nowrap;
   overflow: hidden;
@@ -248,15 +256,9 @@
   pointer-events: none;
 }
 
-.progressBarFill {
-  height: 100%;
-  background: linear-gradient(90deg, #2dc4c4, #1f8fff);
-  transition: width 320ms ease;
-}
-
 .emptyTitle {
   font-size: 18px;
-  font-weight: 900;
+  font-weight: 700;
   letter-spacing: -0.02em;
 }
 
@@ -265,7 +267,7 @@
   margin: 0 auto;
   color: rgba(255, 255, 255, 0.72);
   line-height: 1.4;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .emptyMeta {
@@ -279,27 +281,26 @@
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(255, 255, 255, 0.06);
   color: rgba(255, 255, 255, 0.86);
-  font-weight: 800;
+  font-weight: 600;
   font-size: 13px;
 }
 
-/* Shield badge shown in empty state */
 .shieldBadge {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   justify-content: center;
   padding: 8px 14px;
   border-radius: 999px;
-  background: rgba(29, 184, 122, 0.14);
-  border: 1px solid rgba(29, 184, 122, 0.28);
+  background: rgba(26, 159, 110, 0.14);
+  border: 1px solid rgba(26, 159, 110, 0.28);
   color: #7fffd4;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .shieldBadge strong {
-  font-weight: 900;
+  font-weight: 700;
 }
 
 .watermark {
@@ -308,14 +309,14 @@
   top: 16px;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 10px 12px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.07);
   border: 1px solid rgba(255, 255, 255, 0.12);
   color: rgba(255, 255, 255, 0.88);
   backdrop-filter: blur(10px);
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: -0.01em;
   pointer-events: none;
 }
@@ -323,10 +324,10 @@
 /* Toolbar */
 .toolbar {
   display: flex;
-  gap: 12px;
+  gap: var(--space-3);
   align-items: center;
   justify-content: space-between;
-  padding: 12px 14px;
+  padding: var(--space-3) 14px;
   border-top: 1px solid rgba(255, 255, 255, 0.10);
   background: rgba(7, 17, 31, 0.78);
   flex-wrap: wrap;
@@ -342,7 +343,7 @@
   order: 2;
   margin-left: auto;
   display: flex;
-  gap: 12px;
+  gap: var(--space-3);
   align-items: center;
 }
 
@@ -354,13 +355,20 @@
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: rgba(255, 255, 255, 0.06);
   color: rgba(255, 255, 255, 0.92);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   padding: 10px 12px;
   cursor: pointer;
-  font-weight: 800;
+  font-weight: 600;
+  font-family: inherit;
   display: inline-flex;
   gap: 10px;
   align-items: center;
+  transition: border-color var(--transition-fast), background var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.toolBtn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.10);
+  border-color: rgba(255, 255, 255, 0.22);
 }
 
 .toolBtn:disabled {
@@ -369,8 +377,9 @@
 }
 
 .toolBtnActive {
-  border-color: rgba(45, 196, 196, 0.35);
-  box-shadow: 0 0 0 4px rgba(45, 196, 196, 0.10);
+  border-color: rgba(29, 184, 176, 0.4);
+  background: rgba(29, 184, 176, 0.12);
+  box-shadow: 0 0 0 3px rgba(29, 184, 176, 0.10);
 }
 
 .toolHints {
@@ -378,13 +387,13 @@
   gap: 10px;
   align-items: center;
   color: rgba(255, 255, 255, 0.75);
-  font-weight: 700;
+  font-weight: 500;
   font-size: 13px;
 }
 
 .hintPill {
   display: inline-flex;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
   padding: 8px 10px;
   border-radius: 999px;
@@ -397,7 +406,7 @@
   display: grid;
   grid-template-columns: minmax(220px, 1.8fr) repeat(3, minmax(120px, 0.9fr)) auto;
   gap: 10px;
-  padding: 14px 14px;
+  padding: 14px;
   border-radius: var(--radius-xl);
   border: 1px solid var(--border);
   background: var(--bg-surface);
@@ -407,20 +416,20 @@
 
 .infoItem {
   display: grid;
-  gap: 4px;
+  gap: var(--space-1);
   min-width: 0;
 }
 
 .infoLabel {
   color: var(--text-muted);
-  font-weight: 800;
+  font-weight: 600;
   font-size: 11px;
   letter-spacing: 0.02em;
   text-transform: uppercase;
 }
 
 .infoValue {
-  font-weight: 800;
+  font-weight: 600;
   color: var(--text-primary);
   font-size: 13px;
   white-space: nowrap;
@@ -430,11 +439,11 @@
 
 .mono {
   font-family: var(--font-mono);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .highlight {
-  color: #0b6a45;
+  color: var(--success);
 }
 
 .downloadWrap {
@@ -443,67 +452,77 @@
 }
 
 .downloadBtn {
-  border: 1px solid var(--border-strong);
-  background: var(--bg-elevated);
-  color: var(--text-primary);
-  border-radius: 14px;
-  padding: 10px 12px;
+  border: 1px solid rgba(26, 107, 154, 0.25);
+  background: linear-gradient(180deg, var(--blue-500), var(--blue-700));
+  color: white;
+  border-radius: var(--radius-lg);
+  padding: 10px 14px;
   cursor: pointer;
-  font-weight: 800;
+  font-weight: 600;
+  font-family: inherit;
   display: inline-flex;
   gap: 10px;
   align-items: center;
   white-space: nowrap;
+  transition: filter var(--transition-fast), opacity var(--transition-fast);
+}
+
+.downloadBtn:hover:not(:disabled) {
+  filter: brightness(1.06);
 }
 
 .downloadBtn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+  filter: none;
 }
+
 .modelCard {
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  padding: 12px 14px;
-  border-radius: 14px;
+  padding: var(--space-3) 14px;
+  border-radius: var(--radius-lg);
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.03);
   color: rgba(255, 255, 255, 0.88);
   cursor: pointer;
+  font-family: inherit;
   transition:
-    background 160ms ease,
-    border-color 160ms ease,
-    transform 160ms ease,
-    box-shadow 160ms ease;
-
+    background var(--transition-default),
+    border-color var(--transition-default),
+    transform var(--transition-default),
+    box-shadow var(--transition-default);
   text-align: left;
 }
 
 .modelCard:hover {
-  border-color: rgba(43, 127, 224, 0.69);
+  border-color: rgba(26, 107, 154, 0.55);
   background: rgba(255, 255, 255, 0.05);
   transform: translateY(-1px);
 }
 
 .modelCardActive {
-  background: rgba(43, 127, 224, 0.12);
-  border-color: rgb(43, 127, 224);
-  box-shadow:
-    0 0 0 3px rgba(43, 127, 224, 0.08);
+  background: rgba(26, 107, 154, 0.14);
+  border-color: var(--blue-500);
+  box-shadow: 0 0 0 3px rgba(26, 107, 154, 0.10);
 }
 
 .modelCardLeft {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   min-width: 0;
   width: 100%;
 }
 
 .modelName {
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -519,61 +538,102 @@
   align-items: center;
   justify-content: center;
   font-size: 12px;
-  font-weight: 900;
+  font-weight: 700;
   color: white;
-  transition: all 160ms ease;
+  transition: all var(--transition-default);
 }
 
 .modelIndicatorActive {
-  background: #2b7fe0;
-  border-color: #0077ff;
-  box-shadow:
-    0 0 0 4px rgba(43, 127, 224, 0.15);
+  background: var(--blue-500);
+  border-color: var(--blue-500);
+  box-shadow: 0 0 0 4px rgba(26, 107, 154, 0.15);
 }
 
 .panelHeader {
   position: sticky;
   top: -1px;
   background: #0d1725;
-  padding-top: 16px;
+  padding-top: var(--space-4);
   padding-bottom: 14px;
   z-index: 100;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-  box-shadow: 0 8px 12px rgba(0,0,0,0.15);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
 }
 
 .panelTitle {
   font-size: 15px;
-  font-weight: 800;
+  font-weight: 700;
   color: white;
 }
 
 .panelMeta {
-  margin-top: 4px;
+  margin-top: var(--space-1);
   font-size: 12px;
-  font-weight: 600;
-  color: rgba(255,255,255,0.55);
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.55);
 }
 
 .modelSection {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .sectionTitle {
   margin-top: 6px;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #dedede;
+  color: rgba(255, 255, 255, 0.55);
 }
 
 .sectionCards {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
+}
+
+.viewerLayout {
+  display: flex;
+  height: 100%;
+}
+
+.viewerPane {
+  flex: 1;
+  min-width: 0;
+}
+
+.filePanel {
+  width: 260px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0 var(--space-4) var(--space-4);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  background: #0d1725;
+  color: rgba(255, 255, 255, 0.86);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  scroll-behavior: smooth;
+}
+
+.filePanel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.filePanel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.filePanel::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.55);
+  border-radius: 999px;
+}
+
+.filePanel::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.87);
 }
 
 /* Responsive */
@@ -609,54 +669,4 @@
   .toolbar {
     flex-wrap: wrap;
   }
-}
-
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.viewerLayout {
-  display: flex;
-  height: 100%;
-}
-
-.viewerPane {
-  flex: 1;
-  min-width: 0;
-}
-
-.filePanel {
-  width: 260px;
-  flex-shrink: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 0 16px 16px;
-  border-left: 1px solid rgba(255,255,255,0.1);
-  background: #0d1725;
-  color: rgba(255,255,255,0.86);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.filePanel {
-  scroll-behavior: smooth;
-}
-
-.filePanel::-webkit-scrollbar {
-  width: 6px;
-}
-
-.filePanel::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.filePanel::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.55);
-  border-radius: 999px;
-}
-
-.filePanel::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.87);
 }

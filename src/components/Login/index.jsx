@@ -59,17 +59,17 @@ export default function LoginStep({ onLogin, onRegister }) {
               <path
                 d="M 50 25 C 45 25 40 30 40 40 L 40 75 C 40 85 48 95 60 100 C 72 95 80 85 80 75 L 80 40 C 80 30 75 25 70 25 C 65 25 60 20 60 20 C 60 20 55 25 50 25 Z"
                 fill="#ffffff"
-                stroke="#0f172a"
+                stroke="#0F2438"
                 strokeWidth="1.5"
               />
               
               {/* Highlight on tooth */}
-              <ellipse cx="55" cy="45" rx="5" ry="10" fill="#0f172a" opacity="0.15" />
+              <ellipse cx="55" cy="45" rx="5" ry="10" fill="#0F2438" opacity="0.15" />
               
               {/* Stent/Shield accent */}
               <path
                 d="M 45 70 L 75 70"
-                stroke="#00c99c"
+                stroke="#179E97"
                 strokeWidth="3"
                 strokeLinecap="round"
               />
@@ -77,14 +77,14 @@ export default function LoginStep({ onLogin, onRegister }) {
               {/* DNA helix lines */}
               <path
                 d="M 50 80 Q 60 85 70 80"
-                stroke="#1ed7c3"
+                stroke="#1DB8B0"
                 strokeWidth="2.5"
                 fill="none"
                 strokeLinecap="round"
               />
               <path
                 d="M 50 88 Q 60 93 70 88"
-                stroke="#1ed7c3"
+                stroke="#1DB8B0"
                 strokeWidth="2.5"
                 fill="none"
                 strokeLinecap="round"

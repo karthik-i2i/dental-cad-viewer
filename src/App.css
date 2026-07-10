@@ -1,38 +1,66 @@
-.App {
-  text-align: center;
+.appShell {
+  min-height: 100%;
+  background: var(--bg-primary);
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+.appHeader {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  gap: var(--space-3);
+  padding: 14px 24px;
+  background: linear-gradient(180deg, var(--blue-500), var(--blue-700)); 
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+    backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
-.App-link {
-  color: #61dafb;
+.appTitle {
+  margin: 0;
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.appHeaderRight {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.appWelcome {
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.logoutBtn {
+  padding: 8px 16px;
+  background: rgb(244 51 51);
+  color: #ffffff;
+  border: 1px solid rgba(209, 67, 67, 0.35);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  transition: background var(--transition-default), border-color var(--transition-default), color var(--transition-default);
+}
+
+.logoutBtn:hover {
+  background: #d40000;
+  border-color: var(--error);
+}
+
+.logoutBtn:active {
+  background: rgba(209, 67, 67, 0.12);
+}
+
+.appContent {
+  padding: 5px 10px;
 }

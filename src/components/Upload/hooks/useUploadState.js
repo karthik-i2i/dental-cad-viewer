@@ -2,14 +2,14 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { validateFile } from '../utils';
 
 const useUploadState = (onConfirm) => {
-  const [file1, setFile1] = useState(null);
-  const [file2, setFile2] = useState(null);
-  const [shieldOption, setShieldOption] = useState(''); // new radiation shield form
-  const [selectedPreview, setSelectedPreview] = useState('scan1'); // 'scan1' or 'scan2'
+  const [maxillaFile, setMaxillaFile] = useState(null);
+  const [mandibleFile, setMandibleFile] = useState(null);
+  const [shieldOption, setShieldOption] = useState('');
+  const [selectedPreview, setSelectedPreview] = useState('maxilla');
   const [error, setError] = useState('');
   const inputRef  = useRef();
   const input2Ref = useRef();
-  const canProceed = !!file1 && !!file2 && !!shieldOption;
+  const canProceed = !!maxillaFile && !!mandibleFile && !!shieldOption;
 
   const handleFile = useCallback((f, slot) => {
     setError('');
@@ -19,50 +19,55 @@ const useUploadState = (onConfirm) => {
       setError(validationError);
       return;
     }
-    if (slot === 1) setFile1(f);
-    if (slot === 2) setFile2(f);
+    if (slot === 1) setMaxillaFile(f);
+    if (slot === 2) setMandibleFile(f);
   }, []);
 
-const handleFiles = useCallback((files) => {
-  if (!files || files.length === 0) {
-    return;
-  }
+  const handleFiles = useCallback((files) => {
+    if (!files || files.length === 0) {
+      return;
+    }
 
-  const [first, second] = Array.from(files);
+    if (files.length > 2) {
+      setError('Please select only two STL files: one Mandible scan and one Maxilla scan.');
+      return;
+    }
 
-  if (first) {
-    handleFile(first, 1);
-  }
+    const [first, second] = Array.from(files);
 
-  if (second) {
-    handleFile(second, 2);
-  }
-}, [handleFile]);
+    if (first) {
+      handleFile(first, 1);
+    }
+
+    if (second) {
+      handleFile(second, 2);
+    }
+  }, [handleFile]);
 
   const handleConfirm = () => {
-    if (!file1 || !file2 || !shieldOption) return; // should not happen due to button disable
+    if (!maxillaFile || !mandibleFile || !shieldOption) return; // should not happen due to button disable
     if (typeof onConfirm === 'function') {
       onConfirm({
         shieldOption,
-        scan1: file1,
-        scan2: file2,
+        scan1: maxillaFile,
+        scan2: mandibleFile,
       });
     }
   };
 
   useEffect(() => {
-    if (!file1 && !file2) {
+    if (!maxillaFile && !mandibleFile) {
       setShieldOption('');
-      setSelectedPreview('scan1');
+      setSelectedPreview('maxilla');
       setError('');
     }
-  }, [file1, file2]);
+  }, [maxillaFile, mandibleFile]);
 
   return {
-    file1,
-    setFile1,
-    file2,
-    setFile2,
+    maxillaFile,
+    setMaxillaFile,
+    mandibleFile,
+    setMandibleFile,
     shieldOption,
     setShieldOption,
     selectedPreview,

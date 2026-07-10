@@ -1,34 +1,67 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg-primary: #F4F7FB;
+  /* Surfaces */
+  --bg-primary: #F5F8FB;
   --bg-surface: #FFFFFF;
-  --bg-elevated: #EEF3FA;
-  --border: #D6E2F0;
-  --border-strong: #B8CEEA;
-  --blue-50: #EBF3FF;
-  --blue-100: #C7DEFF;
-  --blue-500: #2B7FE0;
-  --blue-600: #1A6BC7;
-  --blue-700: #155DAD;
-  --blue-900: #0D2E5A;
-  --teal-400: #2DC4C4;
-  --teal-500: #1AADAD;
-  --text-primary: #0D2440;
-  --text-secondary: #4A6582;
-  --text-muted: #8AA0B8;
-  --success: #1DB87A;
-  --warning: #F5A623;
-  --error: #E03B3B;
-  --font-sans: 'DM Sans', -apple-system, sans-serif;
+  --bg-elevated: #EEF3F8;
+  --border: #D7E2EC;
+  --border-strong: #B7C9D8;
+
+  /* Primary / interactive (clinical navy → blue) */
+  --blue-50: #E8F1F7;
+  --blue-100: #C5D9E8;
+  --blue-500: #1A6B9A;
+  --blue-600: #155A84;
+  --blue-700: #0B3A5C;
+  --blue-900: #0F2438;
+
+  /* Accent (refined teal) */
+  --teal-400: #1DB8B0;
+  --teal-500: #179E97;
+
+  /* Text */
+  --text-primary: #0F2438;
+  --text-secondary: #4A6278;
+  --text-muted: #8499AD;
+
+  /* Semantic */
+  --success: #1A9F6E;
+  --warning: #D97706;
+  --error: #D14343;
+
+  /* Viewer */
+  --viewer-stage: #07111F;
+
+  /* Typography */
+  --font-sans: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'DM Mono', 'Fira Code', monospace;
+
+  /* Radii */
   --radius-sm: 6px;
   --radius-md: 10px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
-  --shadow-sm: 0 1px 3px rgba(13,36,64,0.08);
-  --shadow-md: 0 4px 16px rgba(13,36,64,0.10);
-  --shadow-lg: 0 8px 32px rgba(13,36,64,0.13);
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(15, 36, 56, 0.06);
+  --shadow-md: 0 4px 14px rgba(15, 36, 56, 0.08);
+  --shadow-lg: 0 10px 28px rgba(15, 36, 56, 0.10);
+  --focus-ring: 0 0 0 3px rgba(29, 184, 176, 0.22);
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  /* Motion */
+  --transition-fast: 140ms ease;
+  --transition-default: 200ms ease;
+  --transition-enter: 400ms ease;
 }
 
 html, body {
@@ -37,6 +70,7 @@ html, body {
   background: var(--bg-primary);
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 #root { height: 100%; }
@@ -68,4 +102,17 @@ html, body {
 @keyframes shimmer {
   0% { background-position: -400px 0; }
   100% { background-position: 400px 0; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

@@ -1,8 +1,8 @@
 /* ── Base container ─────────────────────────────────────────────────────────── */
 .container {
   width: min(1200px, 100%);
-  margin: 18px auto 40px;
-  animation: fadeUp 420ms ease both;
+  margin: var(--space-4) auto var(--space-6);
+  animation: fadeUp var(--transition-enter) ease both;
 }
 
 /* ── Drop Zone ──────────────────────────────────────────────────────────────── */
@@ -15,7 +15,7 @@
   box-shadow: var(--shadow-md);
   position: relative;
   overflow: hidden;
-  transition: transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+  transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .dropzone:hover {
@@ -26,17 +26,17 @@
 
 .fileActions {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .dragging {
   border-color: var(--teal-400);
-  box-shadow: 0 0 0 4px rgba(45, 196, 196, 0.12), var(--shadow-lg);
+  box-shadow: 0 0 0 4px rgba(29, 184, 176, 0.12), var(--shadow-lg);
 }
 
 .dropzoneInner {
   display: grid;
-  gap: 12px;
+  gap: var(--space-3);
   justify-items: center;
   text-align: center;
 }
@@ -47,31 +47,32 @@
   height: 56px;
   display: grid;
   place-items: center;
-  margin-bottom: 4px;
+  margin-bottom: var(--space-1);
 }
 
 .pulseRing {
   position: absolute;
   inset: -6px;
-  border-radius: 16px;
-  border: 2px solid rgba(43, 127, 224, 0.35);
+  border-radius: var(--radius-lg);
+  border: 2px solid rgba(26, 107, 154, 0.28);
   animation: pulse-ring 1.8s ease-out infinite;
 }
 
 .dropTitle {
   font-size: 22px;
-  letter-spacing: -0.025em;
-  font-weight: 900;
+  letter-spacing: -0.02em;
+  font-weight: 700;
 }
 
 .dropSub {
   color: var(--text-secondary);
   max-width: 540px;
   line-height: 1.5;
+  font-weight: 500;
 }
 
 .dropSub span {
-  font-weight: 700;
+  font-weight: 600;
   color: var(--blue-700);
 }
 
@@ -81,7 +82,7 @@
   gap: 10px;
   color: var(--text-muted);
   font-size: 13px;
-  margin-top: 4px;
+  margin-top: var(--space-1);
 }
 
 .dot {
@@ -91,19 +92,18 @@
   background: var(--border-strong);
 }
 
-/* Radiation notice strip in dropzone */
 .radiationNote {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 8px 14px;
   border-radius: 999px;
-  background: rgba(29, 184, 122, 0.10);
-  border: 1px solid rgba(29, 184, 122, 0.22);
-  color: #0b6a45;
+  background: rgba(26, 159, 110, 0.10);
+  border: 1px solid rgba(26, 159, 110, 0.22);
+  color: var(--success);
   font-size: 13px;
-  font-weight: 700;
-  margin-top: 4px;
+  font-weight: 600;
+  margin-top: var(--space-1);
 }
 
 .error {
@@ -117,7 +117,7 @@
 .splitLayout {
   display: grid;
   grid-template-columns: minmax(340px, 1fr) minmax(280px, 420px);
-  gap: 16px;
+  gap: var(--space-4);
   align-items: start;
 }
 
@@ -128,16 +128,16 @@
 
 .rightPane {
   position: sticky;
-  top: 16px;
+  top: var(--space-4);
   display: grid;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 /* ── Section Card ────────────────────────────────────────────────────────────── */
 .sectionCard {
   display: grid;
-  gap: 12px;
-  padding: 16px;
+  gap: var(--space-3);
+  padding: var(--space-4);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: var(--bg-surface);
@@ -147,8 +147,8 @@
 .sectionHeader {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-weight: 800;
+  gap: var(--space-2);
+  font-weight: 700;
   font-size: 13px;
   letter-spacing: 0.01em;
   color: var(--text-primary);
@@ -158,11 +158,11 @@
   margin-left: auto;
   padding: 4px 10px;
   border-radius: 999px;
-  background: rgba(29, 184, 122, 0.12);
-  border: 1px solid rgba(29, 184, 122, 0.22);
-  color: #0b6a45;
+  background: rgba(26, 159, 110, 0.12);
+  border: 1px solid rgba(26, 159, 110, 0.22);
+  color: var(--success);
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.02em;
   text-transform: uppercase;
 }
@@ -179,10 +179,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 12px 14px;
+  gap: var(--space-3);
+  padding: var(--space-3) 14px;
   border: 1px solid var(--border);
-  border-radius: var(--radius-md, 10px);
+  border-radius: var(--radius-md);
   background: var(--bg-elevated);
 }
 
@@ -190,7 +190,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   width: 100%;
 }
 
@@ -202,12 +202,11 @@
 }
 
 .fileName {
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: -0.01em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 220px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .fileMeta {
@@ -219,28 +218,35 @@
 .reuploadBtn {
   flex-shrink: 0;
   border: 1px solid var(--border-strong);
-  background: var(--bg-elevated);
+  background: var(--bg-surface);
   color: var(--text-primary);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 7px 12px;
   cursor: pointer;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 12px;
+  font-family: inherit;
   white-space: nowrap;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.reuploadBtn:hover {
+  border-color: var(--blue-500);
+  background: var(--blue-50);
 }
 
 /* ── Second Scan Drop Zone ────────────────────────────────────────────────────── */
 .secondScanZone {
   border: 1.5px dashed var(--border-strong);
-  border-radius: var(--radius-md, 10px);
+  border-radius: var(--radius-md);
   padding: 14px;
   cursor: pointer;
-  transition: border-color 140ms, background 140ms;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
 }
 
 .secondScanZone:hover {
   border-color: var(--blue-500);
-  background: rgba(43, 127, 224, 0.04);
+  background: rgba(26, 107, 154, 0.04);
 }
 
 .secondScanFilled {
@@ -252,10 +258,10 @@
 .secondScanEmpty {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   color: var(--text-muted);
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .secondScanEmpty em {
@@ -268,7 +274,7 @@
 .formRow {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .formField {
@@ -278,7 +284,7 @@
 
 .fieldLabel {
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
   color: var(--text-secondary);
   letter-spacing: 0.01em;
   display: flex;
@@ -287,7 +293,7 @@
 }
 
 .required {
-  color: #e55;
+  color: var(--error);
 }
 
 .optionalTag {
@@ -297,7 +303,7 @@
   border: 1px solid var(--border);
   color: var(--text-muted);
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
@@ -306,18 +312,20 @@
   width: 100%;
   padding: 9px 10px;
   border: 1px solid var(--border-strong);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: var(--bg-elevated);
   color: var(--text-primary);
-  font-weight: 700;
+  font-weight: 600;
   font-size: 13px;
+  font-family: inherit;
   cursor: pointer;
   appearance: auto;
 }
 
 .select:focus {
-  outline: 2px solid var(--blue-500);
-  outline-offset: 1px;
+  outline: none;
+  border-color: var(--teal-400);
+  box-shadow: var(--focus-ring);
 }
 
 /* ── Radiation Shield Grid ────────────────────────────────────────────────────── */
@@ -332,22 +340,23 @@
   gap: 5px;
   padding: 12px 13px;
   border: 1.5px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: var(--bg-elevated);
   cursor: pointer;
   text-align: left;
-  transition: border-color 140ms, box-shadow 140ms, background 140ms;
+  font-family: inherit;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
 }
 
 .shieldCard:hover {
-  border-color: rgba(29, 184, 122, 0.4);
-  background: rgba(29, 184, 122, 0.04);
+  border-color: rgba(29, 184, 176, 0.4);
+  background: rgba(29, 184, 176, 0.04);
 }
 
 .shieldCardActive {
-  border-color: rgba(29, 184, 122, 0.55);
-  background: rgba(29, 184, 122, 0.08);
-  box-shadow: 0 0 0 3px rgba(29, 184, 122, 0.10);
+  border-color: rgba(29, 184, 176, 0.55);
+  background: rgba(29, 184, 176, 0.08);
+  box-shadow: 0 0 0 3px rgba(29, 184, 176, 0.10);
 }
 
 .shieldCardTop {
@@ -358,7 +367,7 @@
 }
 
 .shieldLabel {
-  font-weight: 800;
+  font-weight: 700;
   font-size: 13px;
   color: var(--text-primary);
 }
@@ -369,7 +378,7 @@
   width: 18px;
   height: 18px;
   border-radius: 99px;
-  background: rgba(29, 184, 122, 0.18);
+  background: rgba(26, 159, 110, 0.18);
   flex-shrink: 0;
 }
 
@@ -385,24 +394,24 @@
   align-items: flex-start;
   gap: 10px;
   padding: 11px 13px;
-  border-radius: 10px;
-  background: rgba(29, 184, 122, 0.08);
-  border: 1px solid rgba(29, 184, 122, 0.2);
-  color: #0b6a45;
+  border-radius: var(--radius-md);
+  background: rgba(26, 159, 110, 0.08);
+  border: 1px solid rgba(26, 159, 110, 0.2);
+  color: var(--success);
   font-size: 13px;
   font-weight: 600;
   line-height: 1.4;
 }
 
 .shieldSelected strong {
-  font-weight: 900;
+  font-weight: 700;
 }
 
 /* ── Preview Selector ─────────────────────────────────────────────────────── */
 .previewSelector {
   display: flex;
-  gap: 8px;
-  padding: 12px 16px;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: var(--bg-surface);
@@ -413,23 +422,24 @@
   flex: 1;
   padding: 8px 12px;
   border: 1px solid var(--border-strong);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: var(--bg-elevated);
   color: var(--text-primary);
-  font-weight: 700;
+  font-weight: 600;
   font-size: 12px;
+  font-family: inherit;
   cursor: pointer;
-  transition: border-color 140ms, background 140ms;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
 }
 
 .previewBtn:hover {
   border-color: var(--blue-500);
-  background: rgba(43, 127, 224, 0.04);
+  background: rgba(26, 107, 154, 0.04);
 }
 
 .previewBtnActive {
   border-color: var(--blue-500);
-  background: rgba(43, 127, 224, 0.08);
+  background: rgba(26, 107, 154, 0.08);
   color: var(--blue-700);
 }
 
@@ -439,7 +449,7 @@
   height: 300px;
   border-radius: var(--radius-xl);
   overflow: hidden;
-  border: 1px solid rgba(13, 46, 90, 0.25);
+  border: 1px solid rgba(15, 36, 56, 0.18);
   box-shadow: var(--shadow-lg);
 }
 
@@ -455,7 +465,7 @@
   top: 12px;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 8px 12px;
   border-radius: 999px;
   background: rgba(7, 17, 31, 0.55);
@@ -463,7 +473,7 @@
   border: 1px solid rgba(255, 255, 255, 0.12);
   backdrop-filter: blur(10px);
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .viewerResetBtn {
@@ -472,10 +482,11 @@
   top: 12px;
   pointer-events: auto;
   border-radius: 999px;
-  border: 1px solid rgba(13, 36, 64, 0.12);
+  border: 1px solid rgba(15, 36, 56, 0.12);
   padding: 6px 10px;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
+  font-family: inherit;
   background: rgba(255, 255, 255, 0.86);
   color: var(--text-primary);
   cursor: pointer;
@@ -487,10 +498,62 @@
   right: 0;
   height: 2px;
   top: 0%;
-  background: linear-gradient(90deg, transparent, rgba(45, 196, 196, 0.9), transparent);
+  background: linear-gradient(90deg, transparent, rgba(29, 184, 176, 0.9), transparent);
   opacity: 0.65;
   animation: scan-line 2.4s linear infinite;
   pointer-events: none;
+}
+
+/* ── Summary Card ─────────────────────────────────────────────────────────────── */
+.summaryCard {
+  display: grid;
+  gap: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.summaryRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.summaryRow:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.summaryRow:first-child {
+  padding-top: 0;
+}
+
+.summaryLabel {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.summaryValue {
+  font-weight: 600;
+  color: var(--text-primary);
+  max-width: 55%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.summaryValueMono {
+  font-family: var(--font-mono);
+  font-weight: 500;
+}
+
+.summaryValueHighlight {
+  color: var(--success);
 }
 
 /* ── Confirm Bar ──────────────────────────────────────────────────────────────── */
@@ -499,7 +562,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  padding: 14px 16px;
+  padding: 14px var(--space-4);
   border-radius: var(--radius-lg);
   border: 1px solid var(--border);
   background: var(--bg-surface);
@@ -511,7 +574,7 @@
   gap: 10px;
   align-items: center;
   color: var(--text-secondary);
-  font-weight: 600;
+  font-weight: 500;
   font-size: 13px;
 }
 
@@ -525,24 +588,32 @@
   border: 1px solid var(--border-strong);
   background: transparent;
   color: var(--text-primary);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 10px 14px;
   cursor: pointer;
-  font-weight: 700;
+  font-weight: 600;
+  font-family: inherit;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.cancelBtn:hover {
+  background: var(--bg-elevated);
+  border-color: var(--border-strong);
 }
 
 .confirmBtn {
-  border: 1px solid rgba(43, 127, 224, 0.25);
+  border: 1px solid rgba(26, 107, 154, 0.25);
   background: linear-gradient(180deg, var(--blue-500), var(--blue-700));
   color: white;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 10px 16px;
   cursor: pointer;
-  font-weight: 800;
+  font-weight: 600;
+  font-family: inherit;
   display: inline-flex;
   gap: 10px;
   align-items: center;
-  transition: filter 140ms, opacity 140ms;
+  transition: filter var(--transition-fast), opacity var(--transition-fast);
 }
 
 .confirmBtn:hover:not(:disabled) {
@@ -581,21 +652,4 @@
   .confirmNote {
     width: 100%;
   }
-}
-
-/* ── Keyframes (should mirror global or define locally as fallback) ───────────── */
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes pulse-ring {
-  0%   { opacity: 0.9; transform: scale(1); }
-  80%  { opacity: 0;   transform: scale(1.18); }
-  100% { opacity: 0;   transform: scale(1.18); }
-}
-
-@keyframes scan-line {
-  from { top: 0%; }
-  to   { top: 100%; }
 }

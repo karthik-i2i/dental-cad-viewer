@@ -4,15 +4,15 @@ import { SHIELD_OPTIONS } from '../constants';
 import SummaryRow from './SummaryRow';
 
 const SummaryCard = ({
-  file1,
-  file2,
+  maxillaFile,
+  mandibleFile,
   selectedPreview,
   shieldOption,
 }) => {
   return (
     <div className={styles.summaryCard}>
-      <SummaryRow label="Mandible" value={file1?.name} mono />
-      {file2 && <SummaryRow label="Maxilla" value={file2.name} mono />}
+      <SummaryRow label="Mandible" value={maxillaFile?.name} mono />
+      {mandibleFile && <SummaryRow label="Maxilla" value={mandibleFile.name} mono />}
       <SummaryRow label="Previewing" value={
         selectedPreview === 'scan1' ? 'Mandible' : 'Maxilla'
       } />

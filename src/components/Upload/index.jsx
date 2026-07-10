@@ -1,7 +1,6 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState } from 'react';
 import STLViewer from '../STLViewer/STLViewerR3F';
 import styles from './Upload.module.css';
-import { validateFile } from './utils';
 import {
   ScanIcon,
   ScanSmallIcon,
@@ -16,10 +15,10 @@ import useUploadState from './hooks/useUploadState';
 
 const UploadStep = ({ onConfirm }) => {
   const {
-    file1,
-    setFile1,
-    file2,
-    setFile2,
+    maxillaFile,
+    setMaxillaFile,
+    mandibleFile,
+    setMandibleFile,
     shieldOption,
     setShieldOption,
     selectedPreview,
@@ -45,7 +44,7 @@ const UploadStep = ({ onConfirm }) => {
   };
 
   // ── RENDER: Drop Zone ────────────────────────────────────────────────────────
-  if (!file1 && !file2) {
+  if (!maxillaFile && !mandibleFile) {
     return (
       <div className={styles.container}>
         <div
@@ -111,37 +110,37 @@ const UploadStep = ({ onConfirm }) => {
 
             {/* File 1 */}
             <FileUploadCard
-              file={file1}
-              label="Mandible"
+              file={maxillaFile}
+              label="Maxilla"
               inputRef={inputRef}
               onFileChange={(e) => handleFile(e.target.files[0], 1)}
               onReplace={() => inputRef.current.click()}
               onRemove={() => {
-                setFile1(null);
+                setMaxillaFile(null);
 
-                if (selectedPreview === 'scan1') {
-                  setSelectedPreview(file2 ? 'scan2' : 'scan1');
+                if (selectedPreview === 'mandible') {
+                  setSelectedPreview(mandibleFile ? 'maxilla' : 'mandible');
                 }
               }}
-              emptyText="Add Mandible scan"
+              emptyText="Add Maxilla scan"
               headerClassName={styles.previewHeaderInner}
             />
 
             {/* File 2 */}
             <FileUploadCard
-              file={file2}
-              label="Maxilla"
+              file={mandibleFile}
+              label="Mandible"
               inputRef={input2Ref}
               onFileChange={(e) => handleFile(e.target.files[0], 2)}
               onReplace={() => input2Ref.current.click()}
               onRemove={() => {
-                setFile2(null);
+                setMandibleFile(null);
 
-                if (selectedPreview === 'scan2') {
-                  setSelectedPreview(file1 ? 'scan1' : 'scan2');
+                if (selectedPreview === 'maxilla') {
+                  setSelectedPreview(mandibleFile ? 'mandible' : 'maxilla');
                 }
               }}
-              emptyText="Add Maxilla scan"
+              emptyText="Add Mandible scan"
               headerClassName={styles.previewHeaderInner}
             />
           </div>
@@ -156,8 +155,8 @@ const UploadStep = ({ onConfirm }) => {
             canProceed={canProceed}
             handleConfirm={handleConfirm}
             onReupload={() => {
-              setFile1(null);
-              setFile2(null);
+              setMaxillaFile(null);
+              setMandibleFile(null)
               setError('');
             }}
           />
@@ -168,19 +167,19 @@ const UploadStep = ({ onConfirm }) => {
         {/* ── RIGHT PANEL — 3D Preview ────────────────────────────────────── */}
         <div className={styles.rightPane}>
           {/* Preview selector if both files uploaded */}
-          {file1 && file2 && (
+          {maxillaFile && mandibleFile && (
             <div className={styles.previewSelector}>
               <button
-                className={`${styles.previewBtn} ${selectedPreview === 'scan1' ? styles.previewBtnActive : ''}`}
-                onClick={() => setSelectedPreview('scan1')}
-              >
-                Mandible
-              </button>
-              <button
-                className={`${styles.previewBtn} ${selectedPreview === 'scan2' ? styles.previewBtnActive : ''}`}
-                onClick={() => setSelectedPreview('scan2')}
+                className={`${styles.previewBtn} ${selectedPreview === 'maxilla' ? styles.previewBtnActive : ''}`}
+                onClick={() => setSelectedPreview('maxilla')}
               >
                 Maxilla
+              </button>
+              <button
+                className={`${styles.previewBtn} ${selectedPreview === 'mandible' ? styles.previewBtnActive : ''}`}
+                onClick={() => setSelectedPreview('mandible')}
+              >
+                Mandible
               </button>
             </div>
           )}
@@ -188,8 +187,7 @@ const UploadStep = ({ onConfirm }) => {
           <div className={styles.viewerWrapSmall}>
             <STLViewer
               key={viewerKey}
-              scan1={selectedPreview === 'scan1' ? file1 : file2}
-              scan2={null}
+              file={selectedPreview === 'maxilla' ? maxillaFile : mandibleFile}
               autoRotate={false}
             />
 
@@ -201,8 +199,8 @@ const UploadStep = ({ onConfirm }) => {
           </div>
 
           <SummaryCard
-            file1={file1}
-            file2={file2}
+            maxillaFile={maxillaFile}
+            mandibleFile={mandibleFile}
             selectedPreview={selectedPreview}
             shieldOption={shieldOption}
           />

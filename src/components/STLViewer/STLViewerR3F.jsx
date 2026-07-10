@@ -9,11 +9,12 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
  *   1. File-based (upload preview): scan1 / scan2 as File objects
  *   2. URL-based (AI result): stlUrl as URL string
  */
+const EMPTY_STL_URLS = [];
+
 const STLViewerR3F = ({ 
-  scan1, 
-  scan2, 
+  file,
   stlUrl,
-  stlUrls = [],
+  stlUrls = EMPTY_STL_URLS,
   autoRotate = true,
   wireframe = false,
   accentColor = '#E8D5C3',
@@ -21,6 +22,7 @@ const STLViewerR3F = ({
   enablePan = true,
   showGrid = false
 }) => {
+  const hasInitializedRef = useRef(false);
   const mountRef = useRef(null);
   const sceneRef = useRef({});
 
@@ -32,11 +34,9 @@ const STLViewerR3F = ({
     if (s.resizeObs)   s.resizeObs.disconnect();
     if (s.renderer) {
       s.renderer.dispose();
-
       if (s.renderer.forceContextLoss) {
         s.renderer.forceContextLoss();
       }
-
       if (
         mountRef.current &&
         s.renderer.domElement.parentNode === mountRef.current
@@ -56,73 +56,78 @@ const STLViewerR3F = ({
       });
     }
     sceneRef.current = {};
+    hasInitializedRef.current = false;
   }, []);
 
-  // ── initScene — called once both geometries are ready ────────────────────
-  //    geometries: array of { geom, color }
-  const initScene = useCallback((geometries) => {
-    cleanup();
-    const mount = mountRef.current;
-    if (!mount) return;
+  const prepareGeometry = useCallback((geometry) => {
+    if (!geometry) return null;
+    if (!geometry.attributes.normal) {
+      geometry.computeVertexNormals();
+    }
+    geometry.computeBoundingBox?.();
+    geometry.rotateX(-Math.PI / 2);
+    return geometry;
+  }, []);
 
-    const w = mount.clientWidth  || 600;
-    const h = mount.clientHeight || 400;
+  const finishLoading = useCallback((results, index, geom, color, finished, total, initScene) => {
+    results[index] = { geom, color };
+    finished.current += 1;
+    if (finished.current === total) {
+      initScene(results);
+    }
+  }, []);
 
-    // ── Scene ──────────────────────────────────────────────────────────────
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(background);
-
-    // No grid for clean, professional appearance
-
-    // ── Camera ─────────────────────────────────────────────────────────────
-    const camera = new THREE.PerspectiveCamera(38, w / h, 0.1, 20000);
-
-    // ── Renderer ───────────────────────────────────────────────────────────
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+  const createRenderer = useCallback((mount, width, height) => {
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: false,
+    });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(w, h);
-    renderer.shadowMap.enabled   = true;
-    renderer.shadowMap.type      = THREE.PCFShadowMap;
-    // Use LinearToneMapping + exposure 1.0 for neutral, clinically accurate colour
-    renderer.toneMapping         = THREE.LinearToneMapping;
+    renderer.setSize(width, height);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
+    renderer.toneMapping = THREE.LinearToneMapping;
     renderer.toneMappingExposure = 1.0;
-    renderer.outputColorSpace    = THREE.SRGBColorSpace;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
     mount.appendChild(renderer.domElement);
+    return renderer;
+  }, []);
 
-    // ── Controls — full free rotation, no pole restriction ─────────────────
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping  = true;
-    controls.dampingFactor  = 0.08;
-    controls.rotateSpeed    = 0.9;
-    controls.zoomSpeed      = 1.0;
-    controls.panSpeed       = 0.8;
-    controls.enablePan      = enablePan;
-    controls.enableZoom     = true;
-    controls.enableRotate   = true;
-    // Full sphere — no polar restrictions so clinicians can inspect from any angle
-    controls.minPolarAngle  = 0;
-    controls.maxPolarAngle  = Math.PI;
-    controls.minDistance    = 5;
-    controls.maxDistance    = 10000;
-    controls.autoRotate     = autoRotate;
-    controls.autoRotateSpeed = 2.0;
+  const createCamera = useCallback((width, height) => {
+    return new THREE.PerspectiveCamera(38, width / height, 0.1, 20000);
+  }, []);
+
+  const createControls = useCallback((camera, renderer) => {
+    const controls = new OrbitControls(
+      camera,
+      renderer.domElement
+    );
+
     controls.enableDamping = true;
-    controls.enableRotate = true;
-
-    // IMPORTANT ADDITION
+    controls.dampingFactor = 0.08;
+    controls.rotateSpeed = 0.9;
+    controls.zoomSpeed = 1.0;
+    controls.panSpeed = 0.8;
     controls.enablePan = enablePan;
+    controls.enableZoom = true;
+    controls.enableRotate = true;
     controls.screenSpacePanning = true;
-
-    //THIS is what stabilizes “up direction”
-    camera.up.set(0, 1, 0);
-    // BUT allow horizontal orbit
+    controls.minPolarAngle = 0;
+    controls.maxPolarAngle = Math.PI;
     controls.minAzimuthAngle = -Infinity;
     controls.maxAzimuthAngle = Infinity;
+    controls.minDistance = 5;
+    controls.maxDistance = 10000;
+    controls.autoRotate = autoRotate;
+    controls.autoRotateSpeed = 2.0;
+    camera.up.set(0, 1, 0);
 
-    // ── Process each geometry: centre + scale to 100 units ─────────────────
+    return controls;
+  }, [enablePan, autoRotate]);
+
+  const createMeshes = useCallback((scene, geometries) => {
     const meshes = [];
-
-    geometries.forEach(({ geom, color }, idx) => {
+    geometries.forEach(({ geom }) => {
       const material = new THREE.MeshStandardMaterial({
         color: new THREE.Color(accentColor),
         metalness: 0,
@@ -133,52 +138,52 @@ const STLViewerR3F = ({
       const mesh = new THREE.Mesh(geom, material);
       mesh.castShadow = true;
       mesh.receiveShadow = true;
+      mesh.rotation.set(0, 0, 0);
       scene.add(mesh);
       meshes.push(mesh);
-      mesh.rotation.set(0, 0, 0);
-      scene.rotation.set(0, 0, 0);
     });
+    scene.rotation.set(0, 0, 0);
 
-    // ── Lights — bright, neutral, multi-directional for clinical clarity ────
-    // Key light: strong overhead-front
+    return meshes;
+  }, [accentColor, wireframe]);
+
+  const setupLights = useCallback((scene) => {
+    // Key light
     const keyLight = new THREE.DirectionalLight(0xffffff, 2.2);
     keyLight.position.set(60, 140, 100);
     keyLight.castShadow = true;
     keyLight.shadow.mapSize.set(1024, 1024);
     scene.add(keyLight);
 
-    // Fill light: opposite side, slightly cooler, softens harsh shadows
+    // Fill light
     const fillLight = new THREE.DirectionalLight(0xddeeff, 1.2);
     fillLight.position.set(-100, 40, -80);
     scene.add(fillLight);
 
-    // Back/rim light: separates model from background
+    // Rim light
     const rimLight = new THREE.DirectionalLight(0xffffff, 0.9);
     rimLight.position.set(0, -60, -120);
     scene.add(rimLight);
 
-    // Under-fill: removes dark pockets on occlusal surfaces
+    // Under light
     const underLight = new THREE.DirectionalLight(0xffffff, 0.7);
     underLight.position.set(0, -140, 0);
     scene.add(underLight);
 
-    // Ambient: lifts the floor so no part is pitch-black
+    // Ambient
     scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+  }, []);
 
-    // ── Compute combined bounding box for all meshes ───────────────────────
+  const positionCamera = useCallback((camera, controls, meshes) => {
     const box = new THREE.Box3();
-    meshes.forEach(mesh => {
+    meshes.forEach((mesh) => {
       box.expandByObject(mesh);
     });
     const size = new THREE.Vector3();
     const center = new THREE.Vector3();
     box.getSize(size);
     box.getCenter(center);
-    const maxDim = Math.max(
-      size.x,
-      size.y,
-      size.z
-    );
+    const maxDim = Math.max(size.x, size.y, size.z);
     const distance = Math.max(maxDim * 2.2, 100);
     camera.position.set(
       center.x + distance * 0.7,
@@ -188,34 +193,68 @@ const STLViewerR3F = ({
     camera.lookAt(center);
     controls.target.copy(center);
     controls.update();
+  }, []);
 
-    // ── Resize observer ────────────────────────────────────────────────────
+  const setupResizeObserver = useCallback((mount, camera, renderer) => {
     const handleResize = () => {
       if (!mount) return;
-      const nw = mount.clientWidth;
-      const nh = mount.clientHeight;
-      camera.aspect = nw / nh;
+      const width = mount.clientWidth;
+      const height = mount.clientHeight;
+      camera.aspect = width / height;
       camera.updateProjectionMatrix();
-      renderer.setSize(nw, nh);
+      renderer.setSize(width, height);
     };
     const resizeObs = new ResizeObserver(handleResize);
     resizeObs.observe(mount);
+    return resizeObs;
+  }, []);
 
-    // ── Animate ────────────────────────────────────────────────────────────
+  const startAnimation = useCallback((scene, camera, renderer, controls) => {
     const animate = () => {
-      const id = requestAnimationFrame(animate);
-      sceneRef.current.animId = id;
+      sceneRef.current.animId = requestAnimationFrame(animate);
       controls.update();
       renderer.render(scene, camera);
     };
     animate();
+  }, []);
+
+  // ── initScene — called once both geometries are ready ────────────────────
+  //    geometries: array of { geom, color }
+  const initScene = useCallback((geometries) => {
+    cleanup();
+    const mount = mountRef.current;
+    if (!mount) return;
+    const w = mount.clientWidth  || 600;
+    const h = mount.clientHeight || 400;
+    // ── Scene ──────────────────────────────────────────────────────────────
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(background);
+    // ── Camera ─────────────────────────────────────────────────────────────
+    const camera = createCamera(w, h);
+    // ── Renderer ───────────────────────────────────────────────────────────
+    const renderer = createRenderer(mount, w, h);
+    // ── Controls — full free rotation, no pole restriction ─────────────────
+    const controls = createControls(camera, renderer);
+    // ── Process each geometry: centre + scale to 100 units ─────────────────
+    const meshes = createMeshes(scene, geometries);
+    // ── Lights — bright, neutral, multi-directional for clinical clarity ────
+    // Key light: strong overhead-front
+    setupLights(scene);
+    // ── Compute combined bounding box for all meshes ───────────────────────
+    positionCamera(camera, controls, meshes);
+    // ── Resize observer ────────────────────────────────────────────────────
+    const resizeObs = setupResizeObserver(mount, camera, renderer);
+    // ── Animate ────────────────────────────────────────────────────────────
+    startAnimation(scene, camera, renderer, controls);
 
     sceneRef.current = { scene, camera, renderer, controls, meshes, resizeObs };
-  }, [cleanup, background, accentColor, enablePan, autoRotate]);
+
+  }, [cleanup, background, createRenderer, createCamera, createControls, createMeshes, setupLights, 
+      positionCamera, setupResizeObserver, startAnimation]);
 
   // ── Load files then fire initScene ────────────────────────────────────────
   useEffect(() => {
-    if (!scan1 && !stlUrl && stlUrls.length === 0) {
+    if (!file && !stlUrl && stlUrls.length === 0) {
       cleanup();
       return;
     }
@@ -226,7 +265,7 @@ const STLViewerR3F = ({
     // URL-based mode (final AI result)
     if (stlUrls.length > 0) {
       const results = [];
-      let finished = 0;
+      const finished = { current: 0 };
 
       stlUrls.forEach((url, index) => {
         const isPly = url.toLowerCase().endsWith('.ply');
@@ -236,39 +275,19 @@ const STLViewerR3F = ({
           : stlLoader;
 
           loader.load(url, (geometry) => {
-            if (!geometry.attributes.normal) {
-              geometry.computeVertexNormals();
-            }
+            const cleaned = prepareGeometry(geometry);
 
-            // 🔧 FIX ORIENTATION HERE
-            geometry.computeBoundingBox?.();
-
-            const box = new THREE.Box3().setFromObject(new THREE.Mesh(geometry));
-            const size = new THREE.Vector3();
-            box.getSize(size);
-
-            geometry.rotateX(-Math.PI / 2);
-
-            results[index] = {
-              geom: geometry,
-              color: accentColor
-            };
-
-            finished++;
-
-            if (finished === stlUrls.length) {
-              initScene(results);
-            }
+            finishLoading(results, index, cleaned, accentColor, finished, stlUrls.length, initScene);
           },
           undefined,
           (err) => {
             console.error('Load error', url, err);
 
-            finished++;
+          finished.current++;
 
-            if (finished === stlUrls.length) {
-              initScene(results.filter(Boolean));
-            }
+          if (finished.current === stlUrls.length) {
+            initScene(results.filter(Boolean));
+          }
           }
         );
       });
@@ -277,48 +296,56 @@ const STLViewerR3F = ({
     }
 
     // File-based mode (upload preview)
-    const files   = [
-      { file: scan1, color: accentColor },
-      scan2 ? { file: scan2, color: accentColor } : null,
-    ].filter(Boolean);
+    const files = [
+      { file, color: accentColor },
+    ];
+    const loaders = files.map(({ file, color }, idx) => {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
 
-    const results  = new Array(files.length);
-    let   finished = 0;
+        reader.onload = (e) => {
+          try {
+            const isPly = file.name.toLowerCase().endsWith('.ply');
 
-    files.forEach(({ file, color }, idx) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const isPly = file.name.toLowerCase().endsWith('.ply');
-          const geom = isPly
-            ? plyLoader.parse(e.target.result)
-            : stlLoader.parse(e.target.result);
+            const geom = isPly
+              ? plyLoader.parse(e.target.result)
+              : stlLoader.parse(e.target.result);
 
-          geom.computeVertexNormals();
+            const cleaned = prepareGeometry(geom);
 
-          geom.computeBoundingBox?.();
-
-          const box = new THREE.Box3().setFromObject(new THREE.Mesh(geom));
-          const size = new THREE.Vector3();
-          box.getSize(size);
-
-          geom.rotateX(-Math.PI / 2);
-
-          results[idx] = { geom, color };
-          finished++;
-          if (finished === files.length) {
-            initScene(results);
+            resolve({
+              index: idx,
+              geom: cleaned || null,
+              color,
+              valid: !!cleaned,
+            });
+          } catch (err) {
+            console.error('Parse error:', err);
+            resolve({
+              index: idx,
+              geom: null,
+              color,
+              valid: false,
+            });
           }
-        } catch (parseErr) {
-          console.error('STLViewerR3F: Parse error:', parseErr);
-        }
-      };
-      reader.onerror = (e) => console.error('STLViewerR3F: FileReader error:', e);
-      reader.readAsArrayBuffer(file);
+        };
+
+        reader.onerror = () => resolve({ index: idx, geom: null, color, valid: false });
+
+        reader.readAsArrayBuffer(file);
+      });
+    });
+
+    Promise.all(loaders).then((results) => {
+      const valid = results
+        .filter(r => r?.valid && r.geom)
+        .sort((a, b) => a.index - b.index);
+
+      initScene(valid);
     });
 
     return cleanup;
-  }, [stlUrl, stlUrls, scan1, scan2, initScene, cleanup, accentColor]);
+  }, [stlUrl, stlUrls, file, initScene, cleanup, accentColor, prepareGeometry, finishLoading]);
 
   useEffect(() => {
     const handleFrontView = () => {
