@@ -9,14 +9,13 @@ import {
 
 const ShieldSection = ({
   shieldOption,
-  setShieldOption,
+  onStentraTypeChange,
 }) => {
   return (
     <div className={styles.sectionCard}>
       <div className={styles.sectionHeader}>
         <ShieldIcon />
         <span>Stentra Type</span>
-        {/* <span className={styles.sectionBadge}>Oral Care</span> */}
       </div>
 
       <div className={styles.shieldGrid}>
@@ -25,7 +24,7 @@ const ShieldSection = ({
             key={opt.value}
             type="button"
             className={`${styles.shieldCard} ${shieldOption === opt.value ? styles.shieldCardActive : ''}`}
-            onClick={() => setShieldOption(v => v === opt.value ? '' : opt.value)}
+            onClick={() => onStentraTypeChange(opt.value)}
           >
             <div className={styles.shieldCardTop}>
               <span className={styles.shieldLabel}>{opt.label}</span>
@@ -52,9 +51,3 @@ const ShieldSection = ({
 };
 
 export default ShieldSection;
-
-
-
-
-
-

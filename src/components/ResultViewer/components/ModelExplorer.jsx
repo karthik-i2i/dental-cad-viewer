@@ -1,19 +1,44 @@
 import React, { useMemo } from 'react';
 import styles from '../ResultViewer.module.css';
-import { STL_FILES, MODEL_GROUPS } from '../constants';
+import { groupRunFilesByStage } from '../utils';
 
+/**
+ * Model Explorer.
+ *
+ * Backend path: pass precomputed `sections` (visibleGroups from the derived
+ * loading/viewer state). The explorer only renders — no eligibility logic.
+ *
+ * Demo path: pass `files` + `groups` (STL_FILES + MODEL_GROUPS) as before.
+ */
 const ModelExplorer = ({
+  files = [],
+  groups,
+  sections,
   selectedFiles,
   onToggle,
 }) => {
-  const groupedFiles = useMemo(() => {
-    return MODEL_GROUPS.map((group) => ({
-      ...group,
-      files: STL_FILES.filter((file) =>
-        group.ids.includes(file.id)
-      ),
-    }));
-  }, []);
+  const resolvedSections = useMemo(() => {
+    if (sections) return sections;
+
+    if (groups) {
+      return groups.map((group) => ({
+        title: group.title,
+        files: files.filter((file) => group.ids.includes(file.id)),
+      }));
+    }
+
+    return groupRunFilesByStage(files);
+  }, [sections, files, groups]);
+
+  const modelCount = useMemo(() => {
+    if (sections) {
+      return resolvedSections.reduce(
+        (sum, section) => sum + section.files.length,
+        0
+      );
+    }
+    return files.length;
+  }, [sections, resolvedSections, files.length]);
 
   return (
     <div className={styles.filePanel}>
@@ -23,18 +48,18 @@ const ModelExplorer = ({
         </div>
 
         <div className={styles.panelMeta}>
-          {STL_FILES.length} Models • {selectedFiles.length} Selected
+          {modelCount} Models • {selectedFiles.length} Selected
         </div>
       </div>
 
-      {groupedFiles.map((group) => (
-        <div key={group.title} className={styles.modelSection}>
+      {resolvedSections.map((section) => (
+        <div key={section.title} className={styles.modelSection}>
           <div className={styles.sectionTitle}>
-            {group.title}
+            {section.title}
           </div>
 
           <div className={styles.sectionCards}>
-            {group.files.map((file) => {
+            {section.files.map((file) => {
               const isSelected = selectedFiles.some(
                 (f) => f.id === file.id
               );
@@ -58,8 +83,14 @@ const ModelExplorer = ({
                     </div>
 
                     <span className={styles.modelName}>
-                      {file.name}
+                      {file.displayLabel || file.name}
                     </span>
+
+                    {file.metadata?.status === 'edited' ? (
+                      <span className={styles.modelBadge}>
+                        {file.metadata.badge || 'Edited'}
+                      </span>
+                    ) : null}
                   </div>
                 </button>
               );

@@ -9,6 +9,7 @@ const ConfirmBar = ({
   canProceed,
   handleConfirm,
   onReupload,
+  disabledReason,
 }) => {
   return (
     <div className={styles.confirmBar}>
@@ -19,6 +20,7 @@ const ConfirmBar = ({
 
       <div className={styles.confirmActions}>
         <button
+          type="button"
           className={styles.cancelBtn}
           onClick={onReupload}
         >
@@ -26,10 +28,11 @@ const ConfirmBar = ({
         </button>
 
         <button
+          type="button"
           className={styles.confirmBtn}
           onClick={handleConfirm}
           disabled={!canProceed}
-          title={!canProceed ? 'Please select a stentra type first' : undefined}
+          title={!canProceed ? (disabledReason || undefined) : undefined}
         >
           Confirm & Process
           <ArrowIcon />
@@ -40,4 +43,3 @@ const ConfirmBar = ({
 };
 
 export default ConfirmBar;
-

@@ -1,0 +1,26 @@
+/** Upload workflow phases (FSM). Extend with validating | submitting later. */
+export const PHASE = {
+  COLLECTING: 'collecting',
+  REVIEWING: 'reviewing',
+  SUBMITTING: 'submitting',
+};
+
+export const SCAN_SLOT = {
+  MAXILLA: 'maxilla',
+  MANDIBLE: 'mandible',
+};
+
+export const ACTION = {
+  SCAN_ACCEPTED: 'SCAN_ACCEPTED',
+  SCAN_REJECTED: 'SCAN_REJECTED',
+  SCAN_CLEARED: 'SCAN_CLEARED',
+  WORKFLOW_RESET: 'WORKFLOW_RESET',
+  PATIENT_ID_CHANGED: 'PATIENT_ID_CHANGED',
+  STENTRA_TYPE_TOGGLED: 'STENTRA_TYPE_TOGGLED',
+  PREVIEW_SELECTED: 'PREVIEW_SELECTED',
+  ERROR_CLEARED: 'ERROR_CLEARED',
+  ERROR_SET: 'ERROR_SET',
+  SUBMIT_STARTED: 'SUBMIT_STARTED',
+  SUBMIT_SUCCEEDED: 'SUBMIT_SUCCEEDED',
+  SUBMIT_FAILED: 'SUBMIT_FAILED',
+};

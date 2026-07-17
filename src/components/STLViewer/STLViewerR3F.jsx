@@ -267,8 +267,18 @@ const STLViewerR3F = ({
       const results = [];
       const finished = { current: 0 };
 
-      stlUrls.forEach((url, index) => {
-        const isPly = url.toLowerCase().endsWith('.ply');
+      stlUrls.forEach((entry, index) => {
+        // entry may be a plain URL string (legacy: type inferred from the
+        // URL's file extension), or { url, extension } — required for
+        // Object URLs (blob:...), which carry no file extension of their
+        // own and must state their type explicitly.
+        const url = typeof entry === 'string' ? entry : entry.url;
+        const declaredExtension =
+          typeof entry === 'string' ? undefined : entry.extension;
+
+        const isPly = declaredExtension
+          ? declaredExtension.toLowerCase() === 'ply'
+          : url.toLowerCase().endsWith('.ply');
 
         const loader = isPly
           ? plyLoader

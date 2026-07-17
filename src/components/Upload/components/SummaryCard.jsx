@@ -9,18 +9,16 @@ const SummaryCard = ({
   selectedPreview,
   shieldOption,
 }) => {
+  const previewLabel =
+    selectedPreview === 'maxilla' ? 'Maxilla' : 'Mandible';
+
   return (
     <div className={styles.summaryCard}>
-      <SummaryRow label="Mandible" value={maxillaFile?.name} mono />
-      {mandibleFile && <SummaryRow label="Maxilla" value={mandibleFile.name} mono />}
-      <SummaryRow label="Previewing" value={
-        selectedPreview === 'scan1' ? 'Mandible' : 'Maxilla'
-      } />
-      {/* <SummaryRow label="Jaw position"
-        value={JAW_POSITIONS.find(o => o.value === toothType)?.label || '—'} />
-      <SummaryRow label="Stent"
-        value={STENT_POSITIONS.find(o => o.value === stentOption)?.label || 'None'} /> */}
-      <SummaryRow label="Stentra Type"
+      <SummaryRow label="Maxilla" value={maxillaFile?.name} mono />
+      <SummaryRow label="Mandible" value={mandibleFile?.name} mono />
+      <SummaryRow label="Previewing" value={previewLabel} />
+      <SummaryRow
+        label="Stentra Type"
         value={SHIELD_OPTIONS.find(o => o.value === shieldOption)?.label || 'Not selected'}
         highlight={Boolean(shieldOption)}
       />
@@ -29,8 +27,3 @@ const SummaryCard = ({
 };
 
 export default SummaryCard;
-
-
-
-
-

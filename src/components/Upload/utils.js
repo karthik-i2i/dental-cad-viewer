@@ -5,8 +5,12 @@ export const formatSize = (bytes) => {
 };
 
 export const validateFile = (file) => {
-  if (!file.name.toLowerCase().endsWith('.stl')) {
-    return 'Only .stl files are supported.';
+  const lower = file.name.toLowerCase();
+  const isStl = lower.endsWith('.stl');
+  const isPly = lower.endsWith('.ply');
+
+  if (!isStl && !isPly) {
+    return 'Only .stl and .ply files are supported.';
   }
 
   if (file.size > 200 * 1024 * 1024) {

@@ -3,6 +3,7 @@ import LoginStep from "./components/Login";
 import RegisterStep from "./components/Register";
 import UploadStep from "./components/Upload";
 import ResultViewer from "./components/ResultViewer";
+import { APP_HEADER_TOAST_ROOT_ID } from "./components/ResultViewer/components/StageReadyToast";
 import "./App.css";
 
 function App() {
@@ -65,6 +66,11 @@ function App() {
             <h2 className="appTitle">
               Kallisio Stentra Design System
             </h2>
+            <div
+              id={APP_HEADER_TOAST_ROOT_ID}
+              className="appHeaderToastRoot"
+              aria-live="off"
+            />
             <div className="appHeaderRight">
               <span className="appWelcome">
                 Welcome, {user?.userName || 'User'}

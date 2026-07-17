@@ -24,11 +24,20 @@ export const useDownloadZip = (selectedFiles) => {
       const zip = new JSZip();
 
       for (const file of selectedFiles) {
-        const response = await fetch(file.path);
+        // Backend-downloaded files (useRunFiles) already have a local
+        // objectUrl; legacy/demo files (constants.js STL_FILES) only have
+        // a static public path — support both without redownloading.
+        const sourceUrl = file.objectUrl || file.path;
+        if (!sourceUrl) continue;
+
+        const response = await fetch(sourceUrl);
         if (!response.ok) continue;
 
         const blob = await response.blob();
-        zip.file(file.path.split('/').pop(), blob);
+        const zipEntryName = file.objectUrl
+          ? file.name
+          : file.path.split('/').pop();
+        zip.file(zipEntryName, blob);
       }
 
       const zipBlob = await zip.generateAsync({

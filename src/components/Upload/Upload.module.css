@@ -7,7 +7,7 @@
 
 /* ── Drop Zone ──────────────────────────────────────────────────────────────── */
 .dropzone {
-  border: 1.5px dashed var(--border-strong);
+  border: 1.5px var(--border-strong);
   background: linear-gradient(180deg, var(--bg-surface), var(--blue-50));
   border-radius: var(--radius-xl);
   padding: 56px 26px;
@@ -18,10 +18,10 @@
   transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
-.dropzone:hover {
-  transform: translateY(-1px);
-  border-color: var(--blue-500);
-  box-shadow: var(--shadow-lg);
+.uploadGrid {
+  display: flex;
+  gap: 24px;
+  width: 100%;
 }
 
 .fileActions {
@@ -111,6 +111,68 @@
   color: var(--error);
   font-weight: 600;
   text-align: center;
+}
+
+.slotError {
+  margin: 8px 0 0;
+  color: var(--error);
+  font-weight: 600;
+  font-size: 12px;
+  text-align: left;
+}
+
+.uploadCard {
+  flex: 1;
+  border: 1.5px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+  padding: 32px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  cursor: pointer;
+  background: var(--bg-surface);
+  transition: border-color var(--transition-fast),
+              box-shadow var(--transition-fast),
+              transform var(--transition-fast);
+}
+
+.uploadCard:hover {
+  border-color: var(--blue-500);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.uploadCard h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.uploadCard p {
+  margin: 0;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.input {
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 13px;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--teal-400);
+  box-shadow: var(--focus-ring);
 }
 
 /* ── Split Layout ────────────────────────────────────────────────────────────── */
