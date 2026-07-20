@@ -31,7 +31,9 @@ const ProgressState = ({
             width: `${progressPercentage}%`,
             transitionDuration: `${LOADING_PROGRESS_TRANSITION_MS}ms`,
           }}
-        />
+        >
+          <span className={styles.progressBarShimmer} aria-hidden="true" />
+        </div>
 
         <div className={styles.progressBarLabel}>
           {currentStep}

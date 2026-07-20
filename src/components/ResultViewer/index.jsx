@@ -213,10 +213,13 @@ const ResultViewer = ({ resultUrl, scanData, onStartOver, onSetResultUrl, sample
     resumeStep,
   });
 
-  const { current: stageReadyToast, dismiss: dismissStageReadyToast } =
-    useStageReadyNotifications(
-      usingBackendProgress ? visibleGroups : []
-    );
+  const {
+    current: stageReadyToast,
+    isExiting: stageReadyToastExiting,
+    enqueue: enqueueToast,
+  } = useStageReadyNotifications(
+    usingBackendProgress ? visibleGroups : []
+  );
 
   const simulatedProgress = useProgressSimulation({
     scanData: usingBackendProgress ? null : scanData,
@@ -412,15 +415,67 @@ const ResultViewer = ({ resultUrl, scanData, onStartOver, onSetResultUrl, sample
   };
 
   const toggleFileSelection = (file) => {
-    setSelectedFiles((prev) => {
-      const alreadySelected = prev.some((f) => f.id === file.id);
+    const alreadySelected = selectedFiles.some((f) => f.id === file.id);
 
-      if (alreadySelected) {
+    if (alreadySelected && selectedFiles.length === 1) {
+      enqueueToast({
+        key: 'selection:min-one',
+        message: 'At least one model must remain selected.',
+        type: 'info',
+      });
+      return;
+    }
+
+    setSelectedFiles((prev) => {
+      const isSelected = prev.some((f) => f.id === file.id);
+
+      if (isSelected) {
         if (prev.length === 1) return prev;
         return prev.filter((f) => f.id !== file.id);
       }
 
       return [...prev, file];
+    });
+  };
+
+  /** Select / complete / deselect all available files in a jaw stage group. */
+  const toggleGroupSelection = (sectionFiles = []) => {
+    if (!sectionFiles.length) return;
+
+    const groupIds = new Set(sectionFiles.map((f) => f.id));
+    const selectedInGroup = sectionFiles.filter((f) =>
+      selectedFiles.some((p) => p.id === f.id)
+    );
+
+    // All selected → deselect group (never leave the viewer empty).
+    if (selectedInGroup.length === sectionFiles.length) {
+      const wouldEmpty =
+        selectedFiles.filter((f) => !groupIds.has(f.id)).length === 0;
+
+      if (wouldEmpty) {
+        enqueueToast({
+          key: 'selection:min-one',
+          message: 'At least one model must remain selected.',
+          type: 'info',
+        });
+        return;
+      }
+    }
+
+    setSelectedFiles((prev) => {
+      const selectedInPrev = sectionFiles.filter((f) =>
+        prev.some((p) => p.id === f.id)
+      );
+
+      if (selectedInPrev.length === sectionFiles.length) {
+        const next = prev.filter((f) => !groupIds.has(f.id));
+        return next.length === 0 ? prev : next;
+      }
+
+      // None or partial → add missing files in the group.
+      const selectedIds = new Set(prev.map((f) => f.id));
+      const missing = sectionFiles.filter((f) => !selectedIds.has(f.id));
+      return [...prev, ...missing];
     });
   };
 
@@ -463,7 +518,7 @@ const ResultViewer = ({ resultUrl, scanData, onStartOver, onSetResultUrl, sample
 
       <StageReadyToast
         current={stageReadyToast}
-        onDismiss={dismissStageReadyToast}
+        exiting={stageReadyToastExiting}
       />
 
       {resumeError ? (
@@ -495,6 +550,7 @@ const ResultViewer = ({ resultUrl, scanData, onStartOver, onSetResultUrl, sample
                   groups={usingBackendProgress ? undefined : MODEL_GROUPS}
                   selectedFiles={selectedFiles}
                   onToggle={toggleFileSelection}
+                  onToggleGroup={toggleGroupSelection}
                 />
               </div>
             </>

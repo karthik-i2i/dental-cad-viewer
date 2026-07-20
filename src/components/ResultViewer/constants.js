@@ -279,6 +279,12 @@ export const LOADING_MILESTONES = {
     progress: 35,
     message: 'Starting AI generation...',
   },
+  /** Shown while backend current_step === "PRE" (same 35% ceiling as ACCEPTED). */
+  PRE: {
+    id: 'pre',
+    progress: 35,
+    message: 'Preparing patient models...',
+  },
   GENERATING: {
     id: 'generating',
     progress: 65,
@@ -296,8 +302,14 @@ export const LOADING_MILESTONES = {
   },
 };
 
-/** CSS / perceived progress animation between milestones (ms). */
+/** CSS width easing when the milestone percentage jumps (ms). */
 export const LOADING_PROGRESS_TRANSITION_MS = 450;
+
+/** Brief hold on FILES_READY (85%) before promoting to OPENING (100%). */
+export const LOADING_FILES_READY_HOLD_MS = 500;
+
+/** Hold at 100% before revealing the Result Viewer (ms). */
+export const LOADING_REVEAL_HOLD_MS = 700;
 
 /**
  * Demo/legacy timer progress only (useProgressSimulation).

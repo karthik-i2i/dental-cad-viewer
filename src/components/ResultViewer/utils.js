@@ -19,11 +19,11 @@ export const formatOption = (value) => {
 /**
  * Workflow milestone toward opening the ResultViewer.
  *
- * hasRunId          → ACCEPTED (POST succeeded; ResultViewer has run_id)
+ * hasRunId          → ACCEPTED (35%), or PRE copy while current_step === "PRE"
  * running + step≥0  → GENERATING
  * filesReady        → FILES_READY (85%) or OPENING (100%) when forceOpening
  *
- * Does not invent backend state — only maps real frontend signals.
+ * Progress % is discrete milestone ceilings only — no fabricated in-between values.
  */
 export const getLoadingMilestone = ({
   hasRunId = false,
@@ -63,6 +63,19 @@ export const getLoadingMilestone = ({
   }
 
   if (hasRunId) {
+    // Backend PRE phase: same 35% ceiling as ACCEPTED, clearer copy.
+    const isPre =
+      typeof currentStep === 'string' &&
+      String(currentStep).toUpperCase() === 'PRE';
+
+    if (isPre) {
+      return {
+        milestoneId: LOADING_MILESTONES.PRE.id,
+        progressPercentage: LOADING_MILESTONES.PRE.progress,
+        loadingMessage: LOADING_MILESTONES.PRE.message,
+      };
+    }
+
     return {
       milestoneId: LOADING_MILESTONES.ACCEPTED.id,
       progressPercentage: LOADING_MILESTONES.ACCEPTED.progress,
@@ -97,6 +110,30 @@ export const isViewerReady = (downloadedFiles = []) => {
 
 const JAW_ORDER = { maxilla: 0, mandible: 1 };
 const JAW_LABELS = { maxilla: 'Maxilla', mandible: 'Mandible' };
+
+/**
+ * Derive jaw-group checkbox state from selectedFiles (single source of truth).
+ * @returns {{ checked: boolean, indeterminate: boolean, selectedCount: number }}
+ */
+export const getGroupSelectionState = (sectionFiles = [], selectedFiles = []) => {
+  const selectedCount = sectionFiles.filter((file) =>
+    selectedFiles.some((f) => f.id === file.id)
+  ).length;
+  const total = sectionFiles.length;
+
+  return {
+    checked: total > 0 && selectedCount === total,
+    indeterminate: selectedCount > 0 && selectedCount < total,
+    selectedCount,
+  };
+};
+
+/** Section titles that support group-level Maxilla/Mandible selection. */
+export const JAW_GROUP_TITLES = new Set(
+  PIPELINE_STAGE_ORDER.filter((s) => s.id <= LAST_JAW_STAGE_ID).map(
+    (s) => s.title
+  )
+);
 
 /**
  * Initial Model Explorer selection: Reoriented Maxilla + Mandible.

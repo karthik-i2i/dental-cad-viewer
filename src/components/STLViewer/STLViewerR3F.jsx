@@ -25,6 +25,28 @@ const STLViewerR3F = ({
   const hasInitializedRef = useRef(false);
   const mountRef = useRef(null);
   const sceneRef = useRef({});
+  const lastSizeRef = useRef({ width: 0, height: 0 });
+
+  /**
+   * Presentation props must not participate in scene-identity React deps.
+   * Latest values are read at bootstrap time and kept in sync via effects.
+   */
+  const presentationRef = useRef({
+    autoRotate,
+    wireframe,
+    accentColor,
+    background,
+    enablePan,
+    showGrid,
+  });
+  presentationRef.current = {
+    autoRotate,
+    wireframe,
+    accentColor,
+    background,
+    enablePan,
+    showGrid,
+  };
 
   // ── Cleanup — mirrors STLViewer.jsx exactly ──────────────────────────────
   const cleanup = useCallback(() => {
@@ -84,6 +106,7 @@ const STLViewerR3F = ({
     });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(width, height);
+    lastSizeRef.current = { width, height };
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFShadowMap;
     renderer.toneMapping = THREE.LinearToneMapping;
@@ -98,6 +121,8 @@ const STLViewerR3F = ({
   }, []);
 
   const createControls = useCallback((camera, renderer) => {
+    const { enablePan: panEnabled, autoRotate: rotateEnabled } =
+      presentationRef.current;
     const controls = new OrbitControls(
       camera,
       renderer.domElement
@@ -108,7 +133,7 @@ const STLViewerR3F = ({
     controls.rotateSpeed = 0.9;
     controls.zoomSpeed = 1.0;
     controls.panSpeed = 0.8;
-    controls.enablePan = enablePan;
+    controls.enablePan = panEnabled;
     controls.enableZoom = true;
     controls.enableRotate = true;
     controls.screenSpacePanning = true;
@@ -118,22 +143,24 @@ const STLViewerR3F = ({
     controls.maxAzimuthAngle = Infinity;
     controls.minDistance = 5;
     controls.maxDistance = 10000;
-    controls.autoRotate = autoRotate;
+    controls.autoRotate = rotateEnabled;
     controls.autoRotateSpeed = 2.0;
     camera.up.set(0, 1, 0);
 
     return controls;
-  }, [enablePan, autoRotate]);
+  }, []);
 
   const createMeshes = useCallback((scene, geometries) => {
+    const { accentColor: color, wireframe: isWireframe } =
+      presentationRef.current;
     const meshes = [];
     geometries.forEach(({ geom }) => {
       const material = new THREE.MeshStandardMaterial({
-        color: new THREE.Color(accentColor),
+        color: new THREE.Color(color),
         metalness: 0,
         roughness: 0.65,
         side: THREE.DoubleSide,
-        wireframe,
+        wireframe: isWireframe,
       });
       const mesh = new THREE.Mesh(geom, material);
       mesh.castShadow = true;
@@ -145,7 +172,7 @@ const STLViewerR3F = ({
     scene.rotation.set(0, 0, 0);
 
     return meshes;
-  }, [accentColor, wireframe]);
+  }, []);
 
   const setupLights = useCallback((scene) => {
     // Key light
@@ -200,9 +227,20 @@ const STLViewerR3F = ({
       if (!mount) return;
       const width = mount.clientWidth;
       const height = mount.clientHeight;
+      if (width <= 0 || height <= 0) return;
+
+      // Ignore no-op / sub-pixel churn — setSize on tiny layout shifts flashes the canvas.
+      const prev = lastSizeRef.current;
+      const nextW = Math.round(width);
+      const nextH = Math.round(height);
+      if (nextW === Math.round(prev.width) && nextH === Math.round(prev.height)) {
+        return;
+      }
+
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
       renderer.setSize(width, height);
+      lastSizeRef.current = { width, height };
     };
     const resizeObs = new ResizeObserver(handleResize);
     resizeObs.observe(mount);
@@ -228,7 +266,7 @@ const STLViewerR3F = ({
     const h = mount.clientHeight || 400;
     // ── Scene ──────────────────────────────────────────────────────────────
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(background);
+    scene.background = new THREE.Color(presentationRef.current.background);
     // ── Camera ─────────────────────────────────────────────────────────────
     const camera = createCamera(w, h);
     // ── Renderer ───────────────────────────────────────────────────────────
@@ -249,7 +287,7 @@ const STLViewerR3F = ({
 
     sceneRef.current = { scene, camera, renderer, controls, meshes, resizeObs };
 
-  }, [cleanup, background, createRenderer, createCamera, createControls, createMeshes, setupLights, 
+  }, [cleanup, createRenderer, createCamera, createControls, createMeshes, setupLights,
       positionCamera, setupResizeObserver, startAnimation]);
 
   // ── Load files then fire initScene ────────────────────────────────────────
@@ -287,7 +325,15 @@ const STLViewerR3F = ({
           loader.load(url, (geometry) => {
             const cleaned = prepareGeometry(geometry);
 
-            finishLoading(results, index, cleaned, accentColor, finished, stlUrls.length, initScene);
+            finishLoading(
+              results,
+              index,
+              cleaned,
+              presentationRef.current.accentColor,
+              finished,
+              stlUrls.length,
+              initScene
+            );
           },
           undefined,
           (err) => {
@@ -307,7 +353,7 @@ const STLViewerR3F = ({
 
     // File-based mode (upload preview)
     const files = [
-      { file, color: accentColor },
+      { file, color: presentationRef.current.accentColor },
     ];
     const loaders = files.map(({ file, color }, idx) => {
       return new Promise((resolve) => {
@@ -354,8 +400,9 @@ const STLViewerR3F = ({
       initScene(valid);
     });
 
+    // Scene identity only — presentation props sync via effects below.
     return cleanup;
-  }, [stlUrl, stlUrls, file, initScene, cleanup, accentColor, prepareGeometry, finishLoading]);
+  }, [stlUrl, stlUrls, file, initScene, cleanup, prepareGeometry, finishLoading]);
 
   useEffect(() => {
     const handleFrontView = () => {
@@ -423,23 +470,49 @@ const STLViewerR3F = ({
     };
   }, []);
 
-  // ── Update wireframe mode when toggled ──────────────────────────────────
+  // ── Presentation sync — mutate existing Three objects, never rebuild ────
   useEffect(() => {
-    if (sceneRef.current.meshes) {
-      sceneRef.current.meshes.forEach(mesh => {
-        if (mesh.material) {
-          mesh.material.wireframe = wireframe;
-        }
-      });
-    }
+    const { meshes } = sceneRef.current;
+    if (!meshes) return;
+    meshes.forEach((mesh) => {
+      if (mesh.material) {
+        mesh.material.wireframe = wireframe;
+      }
+    });
   }, [wireframe]);
 
-  // ── Update autoRotate when toggled ──────────────────────────────────────
   useEffect(() => {
-    if (sceneRef.current.controls) {
-      sceneRef.current.controls.autoRotate = autoRotate;
+    const { meshes } = sceneRef.current;
+    if (!meshes) return;
+    const color = new THREE.Color(accentColor);
+    meshes.forEach((mesh) => {
+      if (mesh.material?.color) {
+        mesh.material.color.copy(color);
+      }
+    });
+  }, [accentColor]);
+
+  useEffect(() => {
+    const { scene } = sceneRef.current;
+    if (!scene) return;
+    if (scene.background && scene.background.isColor) {
+      scene.background.set(background);
+    } else {
+      scene.background = new THREE.Color(background);
     }
+  }, [background]);
+
+  useEffect(() => {
+    const { controls } = sceneRef.current;
+    if (!controls) return;
+    controls.autoRotate = autoRotate;
   }, [autoRotate]);
+
+  useEffect(() => {
+    const { controls } = sceneRef.current;
+    if (!controls) return;
+    controls.enablePan = enablePan;
+  }, [enablePan]);
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>

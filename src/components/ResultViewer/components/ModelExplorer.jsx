@@ -1,6 +1,10 @@
 import React, { useMemo } from 'react';
 import styles from '../ResultViewer.module.css';
-import { groupRunFilesByStage } from '../utils';
+import {
+  getGroupSelectionState,
+  groupRunFilesByStage,
+  JAW_GROUP_TITLES,
+} from '../utils';
 
 /**
  * Model Explorer.
@@ -16,6 +20,7 @@ const ModelExplorer = ({
   sections,
   selectedFiles,
   onToggle,
+  onToggleGroup,
 }) => {
   const resolvedSections = useMemo(() => {
     if (sections) return sections;
@@ -52,52 +57,102 @@ const ModelExplorer = ({
         </div>
       </div>
 
-      {resolvedSections.map((section) => (
-        <div key={section.title} className={styles.modelSection}>
-          <div className={styles.sectionTitle}>
-            {section.title}
-          </div>
+      {resolvedSections.map((section) => {
+        const supportsGroupSelection =
+          JAW_GROUP_TITLES.has(section.title) && section.files.length > 0;
+        const groupState = supportsGroupSelection
+          ? getGroupSelectionState(section.files, selectedFiles)
+          : null;
 
-          <div className={styles.sectionCards}>
-            {section.files.map((file) => {
-              const isSelected = selectedFiles.some(
-                (f) => f.id === file.id
-              );
-
-              return (
-                <button
-                  key={file.id}
-                  type="button"
-                  className={`${styles.modelCard} ${
-                    isSelected ? styles.modelCardActive : ''
+        return (
+          <div key={section.title} className={styles.modelSection}>
+            {supportsGroupSelection ? (
+              <button
+                type="button"
+                className={`${styles.sectionTitleButton} ${
+                  groupState.checked ? styles.sectionTitleChecked : ''
+                } ${
+                  groupState.indeterminate
+                    ? styles.sectionTitleIndeterminate
+                    : ''
+                }`}
+                onClick={() => onToggleGroup?.(section.files)}
+                aria-checked={
+                  groupState.checked
+                    ? 'true'
+                    : groupState.indeterminate
+                      ? 'mixed'
+                      : 'false'
+                }
+                role="checkbox"
+              >
+                <span
+                  className={`${styles.groupIndicator} ${
+                    groupState.checked ? styles.groupIndicatorActive : ''
+                  } ${
+                    groupState.indeterminate
+                      ? styles.groupIndicatorIndeterminate
+                      : ''
                   }`}
-                  onClick={() => onToggle(file)}
+                  aria-hidden="true"
                 >
-                  <div className={styles.modelCardLeft}>
-                    <div
-                      className={`${styles.modelIndicator} ${
-                        isSelected ? styles.modelIndicatorActive : ''
-                      }`}
-                    >
-                      {isSelected && '✓'}
-                    </div>
+                  {groupState.checked
+                    ? '✓'
+                    : groupState.indeterminate
+                      ? '−'
+                      : ''}
+                </span>
+                <span className={styles.sectionTitleLabel}>
+                  {section.title}
+                </span>
+              </button>
+            ) : (
+              <div className={styles.sectionTitle}>
+                {section.title}
+              </div>
+            )}
 
-                    <span className={styles.modelName}>
-                      {file.displayLabel || file.name}
-                    </span>
+            <div className={styles.sectionCards}>
+              {section.files.map((file) => {
+                const isSelected = selectedFiles.some(
+                  (f) => f.id === file.id
+                );
 
-                    {file.metadata?.status === 'edited' ? (
-                      <span className={styles.modelBadge}>
-                        {file.metadata.badge || 'Edited'}
+                return (
+                  <button
+                    key={file.id}
+                    type="button"
+                    className={`${styles.modelCard} ${
+                      isSelected ? styles.modelCardActive : ''
+                    }`}
+                    onClick={() => onToggle(file)}
+                  >
+                    <div className={styles.modelCardLeft}>
+                      <div
+                        className={`${styles.modelIndicator} ${
+                          isSelected ? styles.modelIndicatorActive : ''
+                        }`}
+                      >
+                        {isSelected && '✓'}
+                      </div>
+
+                      <span className={styles.modelName}>
+                        {file.displayLabel || file.name}
                       </span>
-                    ) : null}
-                  </div>
-                </button>
-              );
-            })}
+
+                      {file.metadata?.status === 'edited' ? (
+                        <span className={styles.modelBadge}>
+                          {file.metadata.badge || 'Edited'}
+                        </span>
+                      ) : null}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };

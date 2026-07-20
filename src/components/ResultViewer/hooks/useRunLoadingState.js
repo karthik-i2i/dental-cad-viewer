@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { LOADING_MILESTONES } from '../constants';
+import {
+  LOADING_FILES_READY_HOLD_MS,
+  LOADING_REVEAL_HOLD_MS,
+} from '../constants';
 import {
   getLoadingMilestone,
   getVisibleRunFileGroups,
@@ -9,6 +12,10 @@ import {
 /**
  * Derives backend loading-screen state, viewer transition readiness,
  * and progressive Model Explorer visibility.
+ *
+ * Progress % tracks milestone values only (15 / 35 / 65 / 85 / 100).
+ * No fabricated in-between percentages — the bar stays put during waits;
+ * ProgressState provides a shimmer so the UI still feels alive.
  *
  * @param {{ preserveViewer?: boolean }} When true (resume transition),
  *   do not collapse back to the loading screen on runId change.
@@ -30,50 +37,55 @@ const useRunLoadingState = ({
   const [forceOpening, setForceOpening] = useState(false);
   const [canRevealViewer, setCanRevealViewer] = useState(false);
 
-  // Latest preserve flag for runId transitions — must not be an effect dep,
-  // or ending a resume (true→false) would hide/unmount the live viewer.
   const preserveViewerRef = useRef(preserveViewer);
   preserveViewerRef.current = preserveViewer;
 
-  // Reset open sequence only on a genuine runId change (fresh upload / Start Over).
-  // Skip when that runId switch is a preserved resume hand-off.
+  // Fresh run only — never collapse the viewer when a resume session ends.
   useEffect(() => {
     if (preserveViewerRef.current) return;
     setForceOpening(false);
     setCanRevealViewer(false);
   }, [runId]);
 
-  // Files ready → 85% frame → 100% frame → reveal (no artificial delay).
+  /**
+   * filesReady → show FILES_READY (85%) briefly, then OPENING (100%).
+   * Percentage jumps only at those milestone changes (CSS eases the width).
+   */
   useEffect(() => {
     if (!filesReady) {
-      // Keep the viewer up during resume even if readiness flickers.
       if (preserveViewer) return undefined;
-
       setForceOpening(false);
       setCanRevealViewer(false);
       return undefined;
     }
 
-    let cancelled = false;
-    let outerRaf = 0;
-    let innerRaf = 0;
+    // Resume: viewer already up — do not re-enter the loading reveal sequence.
+    if (preserveViewer) return undefined;
 
-    outerRaf = window.requestAnimationFrame(() => {
-      if (cancelled) return;
+    setForceOpening(false);
+
+    const openTimer = window.setTimeout(() => {
       setForceOpening(true);
-
-      innerRaf = window.requestAnimationFrame(() => {
-        if (cancelled) return;
-        setCanRevealViewer(true);
-      });
-    });
+    }, LOADING_FILES_READY_HOLD_MS);
 
     return () => {
-      cancelled = true;
-      window.cancelAnimationFrame(outerRaf);
-      window.cancelAnimationFrame(innerRaf);
+      window.clearTimeout(openTimer);
     };
   }, [filesReady, preserveViewer]);
+
+  // After OPENING (100%), hold so the user sees completion, then reveal.
+  useEffect(() => {
+    if (preserveViewer) return undefined;
+    if (!filesReady || !forceOpening || canRevealViewer) return undefined;
+
+    const revealTimer = window.setTimeout(() => {
+      setCanRevealViewer(true);
+    }, LOADING_REVEAL_HOLD_MS);
+
+    return () => {
+      window.clearTimeout(revealTimer);
+    };
+  }, [filesReady, forceOpening, canRevealViewer, preserveViewer]);
 
   const milestone = useMemo(
     () =>
@@ -86,14 +98,6 @@ const useRunLoadingState = ({
       }),
     [runId, status, currentStep, filesReady, forceOpening]
   );
-
-  const [displayProgress, setDisplayProgress] = useState(
-    LOADING_MILESTONES.PREPARING.progress
-  );
-
-  useEffect(() => {
-    setDisplayProgress(milestone.progressPercentage);
-  }, [milestone.progressPercentage]);
 
   const visibleGroups = useMemo(
     () =>
@@ -118,7 +122,7 @@ const useRunLoadingState = ({
   );
 
   return {
-    progressPercentage: displayProgress,
+    progressPercentage: milestone.progressPercentage,
     loadingMessage: milestone.loadingMessage,
     milestoneId: milestone.milestoneId,
     filesReady,
