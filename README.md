@@ -108,14 +108,23 @@ src/
 # Install dependencies
 npm install
 
-# Start development server
+# Start development server (Vite)
 npm start
+# or: npm run dev
+
+# Run tests
+npm run test:ci
 
 # Build for production
-npm build
+npm run build
+
+# Preview production build
+npm run preview
 ```
 
-The app will open at `http://localhost:3000`
+The app will open at `http://localhost:3000`.
+
+Environment variables use the `VITE_` prefix (see `.env.example`). Copy to `.env.development` for local overrides.
 
 ### Usage Flow
 

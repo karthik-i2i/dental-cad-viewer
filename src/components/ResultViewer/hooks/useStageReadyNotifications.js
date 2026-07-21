@@ -26,15 +26,15 @@ const ATTACHMENT_LABEL_TO_KEY = {
 };
 
 const NOTIFICATION_COPY = {
-  'stage:clean': 'Clean stage is ready',
-  'stage:teeth_removed': 'Teeth Removed stage is ready',
-  'stage:trimmed': 'Trimmed stage is ready',
-  'stage:hollow': 'Hollow stage is ready',
-  'stage:solid': 'Solid stage is ready',
-  'attachment:wall': 'Wall stage is ready',
-  'attachment:blade': 'Blade stage is ready',
-  'attachment:prong_engraved': 'Prong Engraved stage is ready',
-  'stage:final': 'AI Generation Complete',
+  'stage:clean': 'Clean Mesh Done',
+  'stage:teeth_removed': 'Teeth Removal Done',
+  'stage:trimmed': 'Trimmed Mesh Done',
+  'stage:hollow': 'Hollow Splint Done',
+  'stage:solid': 'Solid Splint Done',
+  'attachment:wall': 'Wall Build Done',
+  'attachment:blade': 'Blade Placement Done',
+  'attachment:prong_engraved': 'Prong Engrave Done',
+  'stage:final': 'Generation Complete',
 };
 
 /** Visible duration before exit animation begins. */
