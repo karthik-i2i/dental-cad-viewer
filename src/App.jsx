@@ -1,9 +1,12 @@
-import React from "react";
+import React, { useReducer, useCallback } from "react";
 import LoginStep from "./components/Login";
 import RegisterStep from "./components/Register";
 import UploadStep from "./components/Upload";
 import ResultViewer from "./components/ResultViewer";
 import { APP_HEADER_TOAST_ROOT_ID } from "./components/ResultViewer/components/StageReadyToast";
+import { uploadReducer } from "./components/Upload/state/uploadReducer";
+import { uploadInitialState } from "./components/Upload/state/uploadInitialState";
+import { ACTION } from "./components/Upload/state/uploadConstants";
 import "./App.css";
 
 function App() {
@@ -11,8 +14,16 @@ function App() {
   const [user, setUser] = React.useState(null);
   const [scanData, setScanData] = React.useState(null);
   const [resultUrl, setResultUrl] = React.useState(null);
+  const [uploadState, uploadDispatch] = useReducer(
+    uploadReducer,
+    uploadInitialState
+  );
 
   const sampleResultUrl = "/models/DV0001_LATERALIZING_LEFT.stl";
+
+  const resetUploadDraft = useCallback(() => {
+    uploadDispatch({ type: ACTION.WORKFLOW_RESET });
+  }, []);
 
   const handleLogin = (userData) => {
     console.log('User logged in:', userData);
@@ -25,6 +36,7 @@ function App() {
     setUser(null);
     setScanData(null);
     setResultUrl(null);
+    resetUploadDraft();
     setStep("login");
   };
 
@@ -45,9 +57,16 @@ function App() {
     setStep("result");
   };
 
-  const handleStartOver = () => {
+  /** Fresh Upload — clears result session and upload draft. */
+  const handleGoHome = () => {
     setScanData(null);
     setResultUrl(null);
+    resetUploadDraft();
+    setStep("upload");
+  };
+
+  /** Return to Upload with the shared draft intact (review state). */
+  const handleGoBack = () => {
     setStep("upload");
   };
 
@@ -86,12 +105,17 @@ function App() {
           </div>
           <div className="appContent">
             {step === "upload" ? (
-              <UploadStep onConfirm={handleConfirm} />
+              <UploadStep
+                onConfirm={handleConfirm}
+                uploadState={uploadState}
+                uploadDispatch={uploadDispatch}
+              />
             ) : (
               <ResultViewer
                 resultUrl={resultUrl}
                 scanData={scanData}
-                onStartOver={handleStartOver}
+                onGoHome={handleGoHome}
+                onGoBack={handleGoBack}
                 onSetResultUrl={setResultUrl}
                 sampleResultUrl={sampleResultUrl}
               />

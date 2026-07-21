@@ -150,7 +150,13 @@ export function uploadReducer(state, action) {
     }
 
     case ACTION.SUBMIT_SUCCEEDED: {
-      return state;
+      // Stay in review so Go Back can reopen the form without re-upload.
+      // Clear transient submit/error UI; keep scans + patient + stentra type.
+      return {
+        ...state,
+        phase: PHASE.REVIEWING,
+        error: null,
+      };
     }
 
     case ACTION.SUBMIT_FAILED: {

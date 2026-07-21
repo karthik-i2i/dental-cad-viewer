@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import STLViewer from '../STLViewer/STLViewerR3F';
 import styles from './ResultViewer.module.css';
-import { STL_FILES, MODEL_GROUPS } from './constants';
+import { STL_FILES, MODEL_GROUPS, RETRY_REPLACE_TOOLTIPS } from './constants';
 
 import Header from './components/Header';
 import EmptyState from './components/EmptyState';
@@ -18,7 +18,7 @@ import {
   getResultStatusBadge,
   getRunFileIdentityKey,
 } from './utils';
-import { RUN_STATUS } from './runLifecycle';
+import { RUN_STATUS, canMutateRun } from './runLifecycle';
 import {
   areExpectedDownloadsReady,
   getResumeDownloadInvalidationIdentities,
@@ -34,7 +34,14 @@ import useFileOverrides from './hooks/useFileOverrides';
 import useStageReadyNotifications from './hooks/useStageReadyNotifications';
 import StageReadyToast from './components/StageReadyToast';
 
-const ResultViewer = ({ resultUrl, scanData, onStartOver, onSetResultUrl, sampleResultUrl }) => {
+const ResultViewer = ({
+  resultUrl,
+  scanData,
+  onGoHome,
+  onGoBack,
+  onSetResultUrl,
+  sampleResultUrl,
+}) => {
   const originalFile  = scanData?.scan1;
   const secondFile    = scanData?.scan2;
   const shieldOption  = scanData?.shieldOption;
@@ -42,7 +49,6 @@ const ResultViewer = ({ resultUrl, scanData, onStartOver, onSetResultUrl, sample
   const initialRunId = scanData?.runId ?? null;
   const usingBackendProgress = Boolean(initialRunId);
 
-  const [wireframe,   setWireframe]   = useState(false);
   const [autoRotate,  setAutoRotate]  = useState(false);
   const [activeView, setActiveView] = useState(null);
   const [viewerKey,   setViewerKey]   = useState(0);
@@ -62,7 +68,7 @@ const ResultViewer = ({ resultUrl, scanData, onStartOver, onSetResultUrl, sample
   /** Fed into useResumeActions so session unlock waits for regenerated blobs. */
   const [downloadsReadyFlag, setDownloadsReadyFlag] = useState(false);
 
-  const accentColor = wireframe ? '#3E4A5A' : '#E8D5C3';
+  const accentColor = '#E8D5C3';
 
   const {
     fileOverrides,
@@ -216,7 +222,6 @@ const ResultViewer = ({ resultUrl, scanData, onStartOver, onSetResultUrl, sample
   const {
     current: stageReadyToast,
     isExiting: stageReadyToastExiting,
-    enqueue: enqueueToast,
   } = useStageReadyNotifications(
     usingBackendProgress ? visibleGroups : []
   );
@@ -415,22 +420,10 @@ const ResultViewer = ({ resultUrl, scanData, onStartOver, onSetResultUrl, sample
   };
 
   const toggleFileSelection = (file) => {
-    const alreadySelected = selectedFiles.some((f) => f.id === file.id);
-
-    if (alreadySelected && selectedFiles.length === 1) {
-      enqueueToast({
-        key: 'selection:min-one',
-        message: 'At least one model must remain selected.',
-        type: 'info',
-      });
-      return;
-    }
-
     setSelectedFiles((prev) => {
       const isSelected = prev.some((f) => f.id === file.id);
 
       if (isSelected) {
-        if (prev.length === 1) return prev;
         return prev.filter((f) => f.id !== file.id);
       }
 
@@ -443,24 +436,6 @@ const ResultViewer = ({ resultUrl, scanData, onStartOver, onSetResultUrl, sample
     if (!sectionFiles.length) return;
 
     const groupIds = new Set(sectionFiles.map((f) => f.id));
-    const selectedInGroup = sectionFiles.filter((f) =>
-      selectedFiles.some((p) => p.id === f.id)
-    );
-
-    // All selected → deselect group (never leave the viewer empty).
-    if (selectedInGroup.length === sectionFiles.length) {
-      const wouldEmpty =
-        selectedFiles.filter((f) => !groupIds.has(f.id)).length === 0;
-
-      if (wouldEmpty) {
-        enqueueToast({
-          key: 'selection:min-one',
-          message: 'At least one model must remain selected.',
-          type: 'info',
-        });
-        return;
-      }
-    }
 
     setSelectedFiles((prev) => {
       const selectedInPrev = sectionFiles.filter((f) =>
@@ -468,8 +443,7 @@ const ResultViewer = ({ resultUrl, scanData, onStartOver, onSetResultUrl, sample
       );
 
       if (selectedInPrev.length === sectionFiles.length) {
-        const next = prev.filter((f) => !groupIds.has(f.id));
-        return next.length === 0 ? prev : next;
+        return prev.filter((f) => !groupIds.has(f.id));
       }
 
       // None or partial → add missing files in the group.
@@ -479,10 +453,24 @@ const ResultViewer = ({ resultUrl, scanData, onStartOver, onSetResultUrl, sample
     });
   };
 
-  const handleStartOver = () => {
-    if (actionsLocked) return;
+  // Lock nav while a run is unsettled (queued/pending/running) or resume is active.
+  const runProcessing =
+    Boolean(activeRunId) && !canMutateRun(runStatus);
+  const navLocked = actionsLocked || runProcessing;
+  const navLockedTooltip = actionsLocked
+    ? tooltip || RETRY_REPLACE_TOOLTIPS.NAV_LOCKED
+    : RETRY_REPLACE_TOOLTIPS.NAV_LOCKED;
+
+  const handleGoHome = () => {
+    if (navLocked) return;
     clearOverrides();
-    onStartOver?.();
+    onGoHome?.();
+  };
+
+  const handleGoBack = () => {
+    if (navLocked) return;
+    clearOverrides();
+    onGoBack?.();
   };
 
   const handleRetryConfirm = async () => {
@@ -502,7 +490,8 @@ const ResultViewer = ({ resultUrl, scanData, onStartOver, onSetResultUrl, sample
 
       <Header
         canRender={canRender}
-        onStartOver={handleStartOver}
+        onGoHome={handleGoHome}
+        onGoBack={handleGoBack}
         onDownload={downloadZip}
         isDownloading={isDownloading}
         selectedCount={selectedFiles.length}
@@ -511,8 +500,8 @@ const ResultViewer = ({ resultUrl, scanData, onStartOver, onSetResultUrl, sample
         actionTooltip={tooltip}
         onRetry={openRetry}
         onReplace={openReplace}
-        startOverDisabled={actionsLocked}
-        startOverTooltip={tooltip}
+        navLocked={navLocked}
+        navLockedTooltip={navLockedTooltip}
         statusBadge={statusBadge}
       />
 
@@ -539,7 +528,6 @@ const ResultViewer = ({ resultUrl, scanData, onStartOver, onSetResultUrl, sample
                     accentColor={accentColor}
                     background="#07111F"
                     autoRotate={autoRotate}
-                    wireframe={wireframe}
                     showGrid={false}
                     enablePan={true}
                   />
@@ -581,11 +569,9 @@ const ResultViewer = ({ resultUrl, scanData, onStartOver, onSetResultUrl, sample
         <ViewerToolbar
           canRender={canRender}
           autoRotate={autoRotate}
-          wireframe={wireframe}
           activeView={activeView}
           setActiveView={setActiveView}
           onToggleRotate={() => setAutoRotate((v) => !v)}
-          onToggleWireframe={() => setWireframe((v) => !v)}
           onReset={handleReset}
         />
       </div>

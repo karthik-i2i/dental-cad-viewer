@@ -43,7 +43,8 @@ const BADGE_TONE_CLASS = {
 
 const Header = ({
   canRender,
-  onStartOver,
+  onGoHome,
+  onGoBack,
   onDownload,
   isDownloading,
   selectedCount,
@@ -52,8 +53,8 @@ const Header = ({
   actionTooltip = null,
   onRetry,
   onReplace,
-  startOverDisabled = false,
-  startOverTooltip = null,
+  navLocked = false,
+  navLockedTooltip = null,
   statusBadge = null,
 }) => {
   const retryDisabled = !canRender || !canRetry;
@@ -61,11 +62,6 @@ const Header = ({
   const disabledTooltip = !canRender
     ? 'Wait for the model to finish loading.'
     : actionTooltip;
-
-  const newScanDisabled = startOverDisabled;
-  const newScanTooltip = startOverDisabled
-    ? startOverTooltip || actionTooltip
-    : undefined;
 
   const badge = statusBadge || {
     tone: canRender ? 'success' : 'waiting',
@@ -97,12 +93,34 @@ const Header = ({
 
       <div className={styles.headerActions}>
         <ActionButton
-          label="Replace"
-          disabled={replaceDisabled}
-          tooltip={replaceDisabled ? disabledTooltip : undefined}
-          onClick={onReplace}
+          label="Go Back"
+          disabled={navLocked}
+          tooltip={navLocked ? navLockedTooltip : undefined}
+          onClick={onGoBack}
+          className={styles.secondaryBtn}
         />
 
+        {navLocked && navLockedTooltip ? (
+          <span className={styles.actionBtnWrap} title={navLockedTooltip}>
+            <button
+              type="button"
+              className={styles.startOverBtn}
+              disabled
+            >
+              <UploadIcon />
+              {' '}Go Home
+            </button>
+          </span>
+        ) : (
+          <button
+            type="button"
+            className={styles.startOverBtn}
+            onClick={onGoHome}
+          >
+            <UploadIcon />
+            {' '}Go Home
+          </button>
+        )}
         <ActionButton
           label="Retry"
           disabled={retryDisabled}
@@ -110,10 +128,16 @@ const Header = ({
           onClick={onRetry}
         />
 
+        <ActionButton
+          label="Replace"
+          disabled={replaceDisabled}
+          tooltip={replaceDisabled ? disabledTooltip : undefined}
+          onClick={onReplace}
+        />
         <button
           type="button"
           className={styles.downloadBtn}
-          disabled={!canRender || isDownloading}
+          disabled={!canRender || isDownloading || selectedCount === 0}
           onClick={onDownload}
         >
           <DownloadIcon />
@@ -121,28 +145,6 @@ const Header = ({
             ? 'Preparing ZIP...'
             : `Download STL (${selectedCount})`}
         </button>
-
-        {newScanDisabled && newScanTooltip ? (
-          <span className={styles.actionBtnWrap} title={newScanTooltip}>
-            <button
-              type="button"
-              className={styles.startOverBtn}
-              disabled
-            >
-              <UploadIcon />
-              {' '}New Scan
-            </button>
-          </span>
-        ) : (
-          <button
-            type="button"
-            className={styles.startOverBtn}
-            onClick={onStartOver}
-          >
-            <UploadIcon />
-            {' '}New Scan
-          </button>
-        )}
       </div>
     </div>
   );

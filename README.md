@@ -45,7 +45,6 @@ To preserve remaining healthy teeth of oral care patients during radiation thera
 - **Smooth Zoom**: Scroll wheel zoom with configurable depth range
 - **Pan Controls**: Right-click drag for measurement and inspection
 - **Auto-Rotation**: Demo mode for passive viewing
-- **Wireframe Toggle**: Switch between solid and wireframe modes
 - **Reset View**: Recenter the model
 - **Standard Dental Shade**: #E8D5C3 (Vita A1/A2) - globally recognized tooth color for design reference
 
@@ -147,7 +146,7 @@ Environment variables use the `VITE_` prefix (see `.env.example`). Copy to `.env
    - Drag to rotate (full 360°)
    - Scroll to zoom in/out
    - Right-click drag to pan
-   - Use toolbar: toggle auto-rotate, wireframe, reset view
+   - Use toolbar: toggle auto-rotate, reset view
    - Download final STL for 3D printing
 
 ## 📝 License & Clinical Use

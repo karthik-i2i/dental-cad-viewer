@@ -1,8 +1,6 @@
-import { useReducer, useRef, useCallback, useMemo } from 'react';
+import { useRef, useCallback, useMemo } from 'react';
 import { validateFile } from '../utils';
 import { ACTION, PHASE, SCAN_SLOT } from '../state/uploadConstants';
-import { uploadInitialState } from '../state/uploadInitialState';
-import { uploadReducer } from '../state/uploadReducer';
 import { createRun } from '../../../api/runs';
 import {
   selectBothScansReady,
@@ -15,10 +13,16 @@ import {
 
 /**
  * Upload workflow orchestration: validation + refs + confirm side effect.
- * All workflow state lives in uploadReducer.
+ *
+ * State is owned by the caller (App) — single source of truth for the draft
+ * across Upload ↔ Result Viewer navigation.
+ *
+ * @param {object} options
+ * @param {object} options.state - uploadReducer state
+ * @param {Function} options.dispatch - uploadReducer dispatch
+ * @param {Function} options.onConfirm - called after createRun succeeds
  */
-const useUploadWorkflow = (onConfirm) => {
-  const [state, dispatch] = useReducer(uploadReducer, uploadInitialState);
+const useUploadWorkflow = ({ state, dispatch, onConfirm }) => {
   const maxillaInputRef = useRef(null);
   const mandibleInputRef = useRef(null);
 
@@ -36,7 +40,7 @@ const useUploadWorkflow = (onConfirm) => {
       type: ACTION.SCAN_ACCEPTED,
       payload: { slot, file },
     });
-  }, []);
+  }, [dispatch]);
 
   const handleMaxillaFile = useCallback(
     (file) => acceptScan(file, SCAN_SLOT.MAXILLA),
@@ -68,45 +72,43 @@ const useUploadWorkflow = (onConfirm) => {
       if (list[0]) acceptScan(list[0], SCAN_SLOT.MAXILLA);
       if (list[1]) acceptScan(list[1], SCAN_SLOT.MANDIBLE);
     },
-    [acceptScan]
+    [acceptScan, dispatch]
   );
 
   const clearScan = useCallback((slot) => {
     dispatch({ type: ACTION.SCAN_CLEARED, payload: { slot } });
-  }, []);
+  }, [dispatch]);
 
   const resetWorkflow = useCallback(() => {
     dispatch({ type: ACTION.WORKFLOW_RESET });
-  }, []);
+  }, [dispatch]);
 
   const setPatientId = useCallback((value) => {
     dispatch({
       type: ACTION.PATIENT_ID_CHANGED,
       payload: { value },
     });
-  }, []);
+  }, [dispatch]);
 
   const toggleStentraType = useCallback((value) => {
     dispatch({
       type: ACTION.STENTRA_TYPE_TOGGLED,
       payload: { value },
     });
-  }, []);
+  }, [dispatch]);
 
   const selectPreview = useCallback((slot) => {
     dispatch({ type: ACTION.PREVIEW_SELECTED, payload: { slot } });
-  }, []);
+  }, [dispatch]);
 
   const handleConfirm = useCallback(async () => {
     if (!selectCanConfirm(state)) return;
     if (typeof onConfirm !== 'function') return;
 
     try {
-      // 2. Tell the workflow we're submitting
       dispatch({
         type: ACTION.SUBMIT_STARTED,
       });
-      // 3. Build the payload HERE
       const payload = {
         maxilla: state.scans[SCAN_SLOT.MAXILLA],
         mandible: state.scans[SCAN_SLOT.MANDIBLE],
@@ -114,7 +116,6 @@ const useUploadWorkflow = (onConfirm) => {
         stentraType: state.stentraType,
       };
 
-      // 4. Call backend
       const run = await createRun(payload);
 
       dispatch({
@@ -143,7 +144,7 @@ const useUploadWorkflow = (onConfirm) => {
         },
       });
     }
-  }, [state, onConfirm]);
+  }, [state, onConfirm, dispatch]);
 
   const derived = useMemo(
     () => ({

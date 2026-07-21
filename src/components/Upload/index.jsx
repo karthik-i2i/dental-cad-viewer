@@ -14,7 +14,7 @@ import FileUploadCard from './components/FileUploadCard';
 import useUploadWorkflow from './hooks/useUploadWorkflow';
 import { PHASE, SCAN_SLOT } from './state/uploadConstants';
 
-const UploadStep = ({ onConfirm }) => {
+const UploadStep = ({ onConfirm, uploadState, uploadDispatch }) => {
   const {
     phase,
     maxillaFile,
@@ -36,7 +36,11 @@ const UploadStep = ({ onConfirm }) => {
     toggleStentraType,
     selectPreview,
     handleConfirm,
-  } = useUploadWorkflow(onConfirm);
+  } = useUploadWorkflow({
+    state: uploadState,
+    dispatch: uploadDispatch,
+    onConfirm,
+  });
 
   // ── Collecting: upload both scans before review ─────────────────────────────
   if (phase === PHASE.COLLECTING) {

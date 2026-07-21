@@ -248,6 +248,7 @@ export const RETRY_REPLACE_TOOLTIPS = {
   VIEWER_NOT_READY: 'Wait for the model to finish loading.',
   PROCESSING: 'Processing is already running.',
   RESUME_IN_FLIGHT: 'Resume is already in progress.',
+  NAV_LOCKED: 'Wait for processing to finish before leaving this page.',
 };
 
 /** Backend `current_step` at/above this means Input + Reoriented are done. */

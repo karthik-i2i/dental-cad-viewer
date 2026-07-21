@@ -16,7 +16,6 @@ const STLViewerR3F = ({
   stlUrl,
   stlUrls = EMPTY_STL_URLS,
   autoRotate = true,
-  wireframe = false,
   accentColor = '#E8D5C3',
   background = '#111820',
   enablePan = true,
@@ -33,7 +32,6 @@ const STLViewerR3F = ({
    */
   const presentationRef = useRef({
     autoRotate,
-    wireframe,
     accentColor,
     background,
     enablePan,
@@ -41,7 +39,6 @@ const STLViewerR3F = ({
   });
   presentationRef.current = {
     autoRotate,
-    wireframe,
     accentColor,
     background,
     enablePan,
@@ -151,8 +148,7 @@ const STLViewerR3F = ({
   }, []);
 
   const createMeshes = useCallback((scene, geometries) => {
-    const { accentColor: color, wireframe: isWireframe } =
-      presentationRef.current;
+    const { accentColor: color } = presentationRef.current;
     const meshes = [];
     geometries.forEach(({ geom }) => {
       const material = new THREE.MeshStandardMaterial({
@@ -160,7 +156,6 @@ const STLViewerR3F = ({
         metalness: 0,
         roughness: 0.65,
         side: THREE.DoubleSide,
-        wireframe: isWireframe,
       });
       const mesh = new THREE.Mesh(geom, material);
       mesh.castShadow = true;
@@ -471,16 +466,6 @@ const STLViewerR3F = ({
   }, []);
 
   // ── Presentation sync — mutate existing Three objects, never rebuild ────
-  useEffect(() => {
-    const { meshes } = sceneRef.current;
-    if (!meshes) return;
-    meshes.forEach((mesh) => {
-      if (mesh.material) {
-        mesh.material.wireframe = wireframe;
-      }
-    });
-  }, [wireframe]);
-
   useEffect(() => {
     const { meshes } = sceneRef.current;
     if (!meshes) return;

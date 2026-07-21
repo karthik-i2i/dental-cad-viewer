@@ -15,13 +15,6 @@ export const Rotate360Icon = () => (
   </svg>
 );
 
-export const WireframeIcon = () => (
-  <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-    <path d="M7.5 2L13 5.5v7L7.5 16 2 12.5v-7L7.5 2z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/>
-    <path d="M7.5 2v13.5M2 5.5l5.5 3 5.5-3" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5"/>
-  </svg>
-);
-
 export const ResetIcon = () => (
   <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
     <path d="M2 7.5A5.5 5.5 0 1113 7.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>

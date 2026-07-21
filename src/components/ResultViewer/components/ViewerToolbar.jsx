@@ -2,7 +2,6 @@ import React from 'react';
 import styles from '../ResultViewer.module.css';
 import {
   Rotate360Icon,
-  WireframeIcon,
   ResetIcon,
 } from '../icons';
 
@@ -18,11 +17,9 @@ const VIEW_BUTTONS = [
 const ViewerToolbar = ({
   canRender,
   autoRotate,
-  wireframe,
   activeView,
   setActiveView,
   onToggleRotate,
-  onToggleWireframe,
   onReset,
 }) => {
 
@@ -41,15 +38,6 @@ const ViewerToolbar = ({
         >
           <Rotate360Icon />
           <span>360° Auto-Rotate</span>
-        </button>
-
-        <button
-          className={`${styles.toolBtn} ${wireframe ? styles.toolBtnActive : ''}`}
-          onClick={onToggleWireframe}
-          disabled={!canRender}
-        >
-          <WireframeIcon />
-          <span>Wireframe</span>
         </button>
 
         {VIEW_BUTTONS.map(({ label, view }) => (
