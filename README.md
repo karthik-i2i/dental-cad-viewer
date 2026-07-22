@@ -1,180 +1,317 @@
-# Dental CAD STL Viewer - Radiation Stent Planning System
+# Dental CAD Viewer
 
-## 🎯 Project Overview
-
-**Dental CAD STL Viewer** is a clinical-grade web application designed to help dental professionals create custom radiation protection stents for oral care patients. The system allows users to upload dental scans (STL format), preview them in 3D, select radiation shield parameters, and generate AI-powered 3D CAD models that protect remaining healthy teeth from scatter radiation during treatment.
-
-### Clinical Goal
-To preserve remaining healthy teeth of oral care patients during radiation therapy by creating personalized, patient-specific radiation stents based on 3D dental scan data.
+Developer setup guide for the **Kallisio Stentra Design System** frontend — a React app for uploading dental scans, starting a processing run against a backend API, and inspecting generated CAD models in a 3D viewer.
 
 ---
 
-## ✨ Key Features
+## Project overview
 
-### 1. **Dual STL Upload & Preview**
-- Upload primary and antagonist (opposing jaw) dental scans
-- Independent preview of each scan using standard dental shade (Vita A1/A2)
-- Toggle between scans using preview selector buttons
-- Real-time 3D visualization with interactive controls
-
-### 2. **Jaw Configuration Selection**
-- Select tooth position: Upper Jaw, Lower Jaw, Lateral Left, Lateral Right
-- Original pre-treatment scan documentation
-
-### 3. **Stent Option Selection (Optional)**
-- Configure stent parameters for radiation protection
-- Multiple stent position options matching jaw configurations
-- Optional field - users can opt out
-
-### 4. **Radiation Shield Planning**
-- **NEW**: Dedicated radiation shield configuration for oral care patients
-- Four coverage zones:
-  - **Lateral Left**: Shields left lateral teeth & soft tissue from scatter radiation
-  - **Lateral Right**: Shields right lateral teeth from direct beam exposure
-  - **Reduced Coverage**: Minimal coverage for early-stage treatment preservation
-  - **Upper Arch Full**: Full upper arch protection for comprehensive radiation planning
-- Optional selection with clear clinical descriptions
-
-### 5. **AI-Powered 3D CAD Generation**
-- Automatic STL processing and CAD model generation
-- Simulated AI output (ready for real API integration)
-- Results show in result viewer with full interactive controls
-
-### 6. **Seamless 3D Viewer Experience**
-- **360° Free Rotation**: No pole lock - rotate from any angle for complete inspection
-- **Smooth Zoom**: Scroll wheel zoom with configurable depth range
-- **Pan Controls**: Right-click drag for measurement and inspection
-- **Auto-Rotation**: Demo mode for passive viewing
-- **Reset View**: Recenter the model
-- **Standard Dental Shade**: #E8D5C3 (Vita A1/A2) - globally recognized tooth color for design reference
-
-
-### File Format Support
-- **STL (Stereolithography)** - Binary and ASCII formats
-- Max file size: 200 MB per scan
+This is a Vite + React single-page application. Users authenticate (demo login), upload Maxilla and Mandible scans, choose Stentra type and patient ID, then confirm to create a backend run. The Result Viewer polls run status, downloads stage artifacts, and supports Model Explorer selection, Retry (with optional numeric parameters), Replace, and ZIP download.
 
 ---
 
-## 📋 Requirements & Architecture
+## Features
 
-### Data Flow
-
-```
-1. UPLOAD STEP
-   ├─ User uploads primary scan (STL file)
-   ├─ Optional: Upload antagonist scan
-   ├─ Select jaw position (required)
-   ├─ Select stent option (optional)
-   ├─ Select radiation shield (optional)
-   └─ Real-time 3D preview in standard dental shade
-
-2. PROCESSING
-   ├─ Scan data + configuration sent to App state
-   ├─ Simulated AI processing (1.2s delay)
-   └─ CAD model URL generated
-
-3. RESULT VIEWER
-   ├─ 3D CAD model loads from /models/ folder
-   ├─ Full interactive controls
-   ├─ Auto-rotate demo mode enabled
-   ├─ Display scan metadata & shield configuration
-   └─ Option to download final STL
-```
-
-### Component Structure
-
-```
-src/
-├── App.js                           # Main app logic & state management
-├── components/
-│   ├── UploadStep.jsx              # Upload & preview interface
-│   ├── UploadStep.module.css       # Upload styling
-│   ├── ResultViewer.jsx            # Final CAD result display
-│   ├── ResultViewer.module.css     # Result styling
-│   └── STLViewerR3F.jsx            # Unified 3D viewer (file & URL)
-└── public/
-    └── models/
-        └── DV0001_LATERALIZING_LEFT.stl  # Sample output model
-```
+| Area | What it does |
+|------|----------------|
+| **Login / Register** | Demo client-side auth (any valid email/password); not a real identity provider |
+| **Upload** | Maxilla + Mandible `.stl` / `.ply` upload (max 200 MB each), 3D preview, patient ID, Stentra type |
+| **Create run** | `POST /runs` via multipart form data (local-dev or production payload — see [Environment variables](#environment-variables)) |
+| **Result Viewer** | Polls `GET /runs/{run_id}`, downloads stage files, Model Explorer multi-select |
+| **3D viewer** | Three.js viewer: rotate, zoom, pan, auto-rotate, preset views, reset |
+| **Retry / Replace** | Resume from a pipeline step (`POST /runs/{run_id}/resume`); Retry can send editable numeric stage parameters |
+| **Download** | ZIP of currently selected models |
+| **Stage toasts** | Header notifications when new pipeline stages become available |
 
 ---
 
-## 🚀 Getting Started
+## Tech stack
 
-### Installation
+| Layer | Choice |
+|-------|--------|
+| UI | React 19 |
+| Build / dev server | Vite 6 |
+| 3D | Three.js |
+| ZIP | JSZip |
+| Tests | Vitest 3 + jsdom + Testing Library |
+| Package manager | npm (`package-lock.json`) |
+
+---
+
+## Prerequisites
+
+- **Node.js 24** — see [Recommended versions](#recommended-nodenpm-versions)
+- **npm 11+** (bundled with Node 24)
+- A running **backend API** that implements the run endpoints below (required for Upload → Result)
+
+Optional: nvm, fnm, or Volta — run `nvm use` (reads `.nvmrc`) after cloning.
+
+---
+
+## Recommended Node/npm versions
+
+This project supports **one** development runtime: **Node.js 24**.
+
+| Item | Value |
+|------|--------|
+| **Official runtime** | **Node.js 24** (Active LTS) |
+| **npm** | **11+** (ships with Node 24) |
+| `.nvmrc` | `24` |
+| `package.json` `engines` | `"node": "^24.0.0"`, `"npm": ">=11.0.0"` |
+
+Use the npm that comes with Node 24. Do not pin an older npm (for example npm 10) via Corepack.
 
 ```bash
-# Install dependencies
+nvm use          # or: nvm install 24
+node -v          # expect v24.x.x
+npm -v           # expect 11.x
+```
+
+---
+
+## Installation
+
+```bash
+git clone <repository-url>
+cd dental-cad-viewer
 npm install
+```
 
-# Start development server (Vite)
+Copy the example env file and adjust if needed:
+
+```bash
+# Windows (PowerShell)
+Copy-Item .env.example .env.development
+
+# macOS / Linux
+cp .env.example .env.development
+```
+
+Vite loads `.env.development` automatically in `npm start` / `npm run dev`.
+
+---
+
+## Environment variables
+
+Defined in `.env.example` and read from `src/config/env.js`. Only `VITE_`-prefixed variables are exposed to the client.
+
+| Variable | Required | Default (if unset) | Description |
+|----------|----------|--------------------|-------------|
+| `VITE_API_BASE_URL` | No | `http://localhost:8000` | Backend origin (no trailing slash). Used by `src/api/client.js`. |
+| `VITE_USE_LOCAL_DEV_PIPELINE` | No | **`true`** (when unset) | When `true`, `createRun()` uploads fixed files from `public/dev/` instead of user scans. Set to `false` for the production upload payload (`maxilla` / `mandible`). |
+
+**Important:** If `VITE_USE_LOCAL_DEV_PIPELINE` is omitted, the app behaves as if it were `true`. Explicitly set `VITE_USE_LOCAL_DEV_PIPELINE=false` when you need real Maxilla/Mandible uploads.
+
+Example `.env.development`:
+
+```env
+VITE_API_BASE_URL=http://localhost:8000
+VITE_USE_LOCAL_DEV_PIPELINE=true
+```
+
+---
+
+## Backend requirements
+
+The frontend expects an HTTP API at `VITE_API_BASE_URL`. Primary contracts (see `src/api/runs.js`):
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `POST` | `/runs` | Create a run (multipart). Local-dev fields: `reoriented_mandible`, `reoriented_maxilla`, `reoriented_boundary_zip`, `patient_id`, `stentra_type`. Production fields: `maxilla`, `mandible`, `patient_id`, `stentra_type`. |
+| `GET` | `/runs/{run_id}` | Poll status (`status`, `current_step`, `files[]` with `name`, `download_url`, optional `parameters`). |
+| `POST` | `/runs/{run_id}/resume` | Retry / Replace (`from_step`, optional files, optional numeric parameter fields). |
+| `GET` | file `download_url` | Download a generated artifact (blob). |
+
+Without a reachable backend, login/upload UI still load, but **Confirm & Process** / polling will fail.
+
+Local-dev pipeline assets (when enabled):
+
+- `public/dev/su31626_step_01_reoriented_mandible.ply`
+- `public/dev/su31626_step_01_reoriented_maxilla.ply`
+- `public/dev/su31626_reoriented_boundaries.zip`
+
+---
+
+## Running locally
+
+```bash
 npm start
-# or: npm run dev
+# equivalent:
+npm run dev
+```
 
-# Run tests
+- Dev server: **http://localhost:3000** (`vite.config.js`)
+- Browser opens automatically when supported (`server.open: true`)
+
+Flow:
+
+1. Open the app → **Login** (demo: any email with `@` + any password) or **Register**.
+2. **Upload** Maxilla and Mandible, enter patient ID, select Stentra type → **Confirm & Process**.
+3. **Result Viewer** polls the run, reveals stages in Model Explorer, and loads selected models in the 3D viewer.
+
+---
+
+## Available npm scripts
+
+| Script | Command | Description |
+|--------|---------|-------------|
+| `npm start` | `vite` | Start dev server (port 3000) |
+| `npm run dev` | `vite` | Same as `start` |
+| `npm run build` | `vite build` | Production build → `dist/` |
+| `npm run preview` | `vite preview` | Serve `dist/` locally (port 3000) |
+| `npm test` | `vitest` | Interactive Vitest watch mode |
+| `npm run test:ci` | `vitest run` | Single CI test run |
+| `npm run test:coverage` | `vitest run --coverage` | Tests + V8 coverage report |
+| `npm run lint` | `eslint .` | Lint JS/JSX (quality rules) |
+| `npm run lint:fix` | `eslint . --fix` | Auto-fix safe ESLint issues |
+| `npm run format` | `prettier --write .` | Format with Prettier |
+| `npm run format:check` | `prettier --check .` | Check formatting without writing |
+
+ESLint covers code quality (React, hooks, unused vars). Prettier covers formatting. They are intentionally separate.
+
+---
+
+## Running tests
+
+```bash
+# One-shot (CI-style)
 npm run test:ci
 
-# Build for production
-npm run build
+# Watch mode
+npm test
 
-# Preview production build
+# Coverage (output under coverage/)
+npm run test:coverage
+```
+
+Tests live under `src/components/ResultViewer/__tests__/` (file parsing, artifact eligibility, resume selection, retry parameters). Setup: `src/test/setup.js`.
+
+---
+
+## Building for production
+
+```bash
+npm run build
 npm run preview
 ```
 
-The app will open at `http://localhost:3000`.
+Output directory: **`dist/`**. Preview serves the build at http://localhost:3000.
 
-Environment variables use the `VITE_` prefix (see `.env.example`). Copy to `.env.development` for local overrides.
-
-### Usage Flow
-
-1. **Upload Scans**
-   - Drag & drop or click to upload primary scan (STL)
-   - Optionally upload antagonist scan
-   - View previews in real-time
-
-2. **Configure Treatment**
-   - Select jaw position (required)
-   - Choose stent option if needed
-   - Select radiation shield zone for patient protection
-
-3. **Confirm & Process**
-   - Click "Confirm & Process"
-   - Wait for AI processing (~1.2 seconds)
-   - View final 3D CAD model
-
-4. **Inspect 3D Model**
-   - Drag to rotate (full 360°)
-   - Scroll to zoom in/out
-   - Right-click drag to pan
-   - Use toolbar: toggle auto-rotate, reset view
-   - Download final STL for 3D printing
-
-## 📝 License & Clinical Use
-
-This application is designed for clinical use in oral cancer patient treatment planning. Ensure compliance with:
-- HIPAA (if handling patient data)
-- Medical device regulations in your jurisdiction
-- Institutional review and approval
+Ensure production env values (especially `VITE_API_BASE_URL` and `VITE_USE_LOCAL_DEV_PIPELINE`) are set at **build** time — Vite inlines `import.meta.env` during `vite build`.
 
 ---
 
-## 👥 Contributing & Support
+## High-level application workflow
 
-For issues, feature requests, or clinical feedback:
-1. Document the issue with clear steps to reproduce
-2. Include browser console output (F12)
-3. Specify STL file type and approximate size
-4. Describe the clinical use case
+```
+Login / Register (demo)
+        ↓
+Upload (Maxilla + Mandible + patient_id + stentra_type)
+        ↓
+POST /runs  →  run_id
+        ↓
+Result Viewer
+  ├─ poll GET /runs/{run_id} every ~2s
+  ├─ download eligible files → Model Explorer
+  ├─ select models → 3D viewer
+  ├─ Retry / Replace → POST /runs/{run_id}/resume
+  └─ Download ZIP of selection
+```
+
+App step state is owned by `src/App.jsx`: `login` → `register` | `upload` → `result`.
 
 ---
 
-## 📚 References
+## Project structure
 
-- **Vita Shade Guide**: https://www.vita-zahnfabrik.com/
-- **Three.js Documentation**: https://threejs.org/docs/
-- **STL Format**: https://en.wikipedia.org/wiki/STL_(file_format)
+```
+dental-cad-viewer/
+├── index.html                 # Vite HTML entry
+├── package.json
+├── package-lock.json
+├── vite.config.js             # Vite + Vitest config
+├── .env.example               # Documented env template
+├── public/
+│   └── dev/                   # Fixed files for local-dev createRun pipeline
+└── src/
+    ├── main.jsx               # React bootstrap
+    ├── App.jsx                # Step routing + shared upload draft
+    ├── api/
+    │   ├── client.js          # apiUrl + request helper
+    │   └── runs.js            # createRun, getRun, resumeRun, fetchRunFile
+    ├── config/
+    │   └── env.js             # API_BASE_URL, USE_LOCAL_DEV_PIPELINE
+    ├── test/
+    │   └── setup.js           # Vitest setup
+    └── components/
+        ├── Login/             # Demo login
+        ├── Register/          # Demo register
+        ├── Upload/            # Scan upload workflow
+        ├── ResultViewer/      # Polling, explorer, retry/replace, download
+        ├── ReplaceDialog/     # Replace file UI
+        └── STLViewer/         # Three.js STL/PLY viewer
+```
 
 ---
 
-**Last Updated**: March 15, 2026
-**Version**: 1.0.0 - Initial Release
+## Troubleshooting
+
+| Problem | What to check |
+|---------|----------------|
+| `npm start` fails / engine warning | Use Node 24 (`nvm use` / `node -v` should be `v24.x`). |
+| Confirm & Process fails / network errors | Backend running? `VITE_API_BASE_URL` correct (no trailing slash)? Browser Network tab. |
+| Uploaded scans ignored by the API | Default local-dev pipeline is **on**. Set `VITE_USE_LOCAL_DEV_PIPELINE=false` and restart the dev server. |
+| Empty Result Viewer / no models | Run still processing? Polling errors? Backend returning `files[]`? |
+| Port 3000 in use | Stop the other process, or change `server.port` in `vite.config.js`. |
+| Tests fail after pull | `npm install` then `npm run test:ci`. |
+| Env changes not applied | Restart Vite after editing `.env*`. Rebuild for production (`npm run build`). |
+
+---
+
+## Common developer commands
+
+```bash
+npm install              # install deps from package-lock.json
+npm start                # dev server → http://localhost:3000
+npm run lint             # ESLint quality checks
+npm run lint:fix         # ESLint auto-fix (safe fixes only)
+npm run format           # Prettier write
+npm run test:ci          # run all unit tests once
+npm run build            # production bundle → dist/
+```
+
+---
+
+## Continuous integration
+
+Every **push** and **pull request** runs GitHub Actions (`.github/workflows/ci.yml`) on **Node 24**:
+
+1. `npm install`
+2. `npm run lint`
+3. `npm run test:ci`
+4. `npm run build`
+
+There is no deploy or release automation in CI.
+
+---
+
+## License & clinical use
+
+Licensed under the [MIT License](./LICENSE).
+
+This application is intended for clinical radiation-stent planning workflows. Ensure compliance with applicable privacy and medical-device regulations (for example HIPAA where relevant) and your institution’s review process before using with patient data.
+
+---
+
+## Contributing
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for setup, coding standards, and pull request expectations.
+
+Quick checklist before a PR: `npm run lint`, `npm run test:ci`, and `npm run build` (same checks as CI).
+
+---
+
+## Additional documentation
+
+- [CONTRIBUTING.md](./CONTRIBUTING.md) — contributor guide
+- [LICENSE](./LICENSE) — MIT License

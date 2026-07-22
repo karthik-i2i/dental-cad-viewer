@@ -4,6 +4,14 @@ import { RETRY_REPLACE_TOOLTIPS, SELECTION_MODE } from '../constants';
 import { CONFIRM_MODAL_MODE } from '../components/ConfirmModal';
 import { evaluateRetryReplaceSelection } from '../resumeSelection';
 import {
+  areRetryParametersValid,
+  extractRetryParameters,
+  isAllowedNumericDraftInput,
+} from '../retryParameters';
+
+const RETRY_PARAMETERS_INVALID_TITLE =
+  'Enter a valid number for every parameter.';
+import {
   RUN_STATUS,
   canMutateRun,
   deriveRunLifecycle,
@@ -17,8 +25,13 @@ export const buildResumeApiPayload = ({
   fromStep,
   replacementFiles = null,
   selectionMode = null,
+  parameters = null,
 }) => {
   const payload = { fromStep };
+
+  if (parameters && Object.keys(parameters).length > 0) {
+    payload.parameters = parameters;
+  }
 
   if (!replacementFiles) {
     return payload;
@@ -62,6 +75,8 @@ const useResumeActions = ({
   initialRunId = null,
   onResumeSuccess = null,
   downloadsReady = true,
+  /** Ref to latest poll files[] (parameters source). Read only at openRetry. */
+  runFilesRef = null,
 }) => {
   const [activeRunId, setActiveRunId] = useState(initialRunId);
 
@@ -204,12 +219,18 @@ const useResumeActions = ({
     setResumeError(null);
     setConfirmModalAction(RESUME_ACTION.RETRY);
     setConfirmModalMode(CONFIRM_MODAL_MODE.CONFIRM);
+    // Freeze poll parameters at open — dialog must not track live polls.
+    const parameterDraft = extractRetryParameters(
+      runFilesRef?.current || [],
+      selectedFiles
+    );
     setRetrySnapshot({
       selectedFiles: [...selectedFiles],
       stageTitle: evaluation.stageTitle,
       resumeStep: evaluation.resumeStep,
       actionKey: evaluation.actionKey,
       selectionMode: evaluation.selectionMode,
+      parameterDraft,
     });
     setConfirmModalOpen(true);
   }, [
@@ -218,7 +239,22 @@ const useResumeActions = ({
     selectedFiles,
     openProcessingInfoModal,
     isRunStillProcessing,
+    runFilesRef,
   ]);
+
+  const updateRetryParameter = useCallback((key, value) => {
+    if (!isAllowedNumericDraftInput(value)) return;
+    setRetrySnapshot((prev) => {
+      if (!prev?.parameterDraft || !(key in prev.parameterDraft)) return prev;
+      return {
+        ...prev,
+        parameterDraft: {
+          ...prev.parameterDraft,
+          [key]: value,
+        },
+      };
+    });
+  }, []);
 
   const closeConfirmModal = useCallback(() => {
     if (isResuming) return;
@@ -268,6 +304,7 @@ const useResumeActions = ({
       stageTitle,
       selectedForReplace,
       selectionForRestore = null,
+      parameters = null,
     }) => {
       if (!activeRunId || fromStep === null || fromStep === undefined) {
         throw new Error('Missing run id or from_step for resume.');
@@ -282,6 +319,7 @@ const useResumeActions = ({
         fromStep,
         selectionMode,
         replacementFiles,
+        parameters,
       });
 
       setIsResuming(true);
@@ -341,6 +379,9 @@ const useResumeActions = ({
     if (!retrySnapshot || actionsLocked) return false;
     if (confirmModalMode !== CONFIRM_MODAL_MODE.CONFIRM) return false;
 
+    const parameterDraft = retrySnapshot.parameterDraft || {};
+    if (!areRetryParametersValid(parameterDraft)) return false;
+
     if (isRunStillProcessing()) {
       openProcessingInfoModal(RESUME_ACTION.RETRY);
       return false;
@@ -354,6 +395,8 @@ const useResumeActions = ({
         stageTitle: retrySnapshot.stageTitle,
         selectedForReplace: null,
         selectionForRestore: retrySnapshot.selectedFiles,
+        parameters:
+          Object.keys(parameterDraft).length > 0 ? parameterDraft : null,
       });
       if (!result) {
         openProcessingInfoModal(RESUME_ACTION.RETRY);
@@ -365,6 +408,7 @@ const useResumeActions = ({
         stageTitle: retrySnapshot.stageTitle,
         selectedFiles: retrySnapshot.selectedFiles,
         replacementFiles: null,
+        parameters: parameterDraft,
       };
     } catch {
       return false;
@@ -428,6 +472,9 @@ const useResumeActions = ({
   const confirmModal = useMemo(() => {
     const isInfo = confirmModalMode === CONFIRM_MODAL_MODE.INFO;
     const isReplaceAction = confirmModalAction === RESUME_ACTION.REPLACE;
+    const parameterDraft = retrySnapshot?.parameterDraft ?? {};
+    const parametersValid = areRetryParametersValid(parameterDraft);
+    const parametersInvalid = !parametersValid;
 
     if (isInfo) {
       return {
@@ -437,9 +484,13 @@ const useResumeActions = ({
         action: confirmModalAction,
         currentStepTitle,
         stageTitle: null,
+        parameterDraft: {},
+        onParameterChange: undefined,
         onConfirm: undefined,
         onCancel: closeConfirmModal,
         confirmDisabled: true,
+        cancelDisabled: false,
+        confirmDisabledTitle: undefined,
         confirmLabel: 'OK',
         cancelLabel: 'OK',
         dismissLabel: 'OK',
@@ -453,9 +504,17 @@ const useResumeActions = ({
       action: RESUME_ACTION.RETRY,
       currentStepTitle: null,
       stageTitle: retrySnapshot?.stageTitle ?? evaluation.stageTitle,
+      parameterDraft,
+      onParameterChange: updateRetryParameter,
       onConfirm: confirmRetry,
       onCancel: closeConfirmModal,
-      confirmDisabled: isResuming,
+      confirmDisabled: isResuming || parametersInvalid,
+      // Keep Cancel / Escape available while editing invalid params.
+      cancelDisabled: isResuming,
+      confirmDisabledTitle:
+        !isResuming && parametersInvalid
+          ? RETRY_PARAMETERS_INVALID_TITLE
+          : undefined,
       confirmLabel: isResuming ? 'Retrying…' : 'Retry',
       cancelLabel: 'Cancel',
       dismissLabel: 'OK',
@@ -470,6 +529,7 @@ const useResumeActions = ({
     confirmRetry,
     closeConfirmModal,
     isResuming,
+    updateRetryParameter,
   ]);
 
   return {

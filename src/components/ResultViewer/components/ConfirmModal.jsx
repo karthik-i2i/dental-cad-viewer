@@ -24,9 +24,14 @@ const ConfirmModal = ({
   onConfirm,
   onCancel,
   confirmDisabled = false,
+  /** When omitted, Cancel follows confirmDisabled (legacy). */
+  cancelDisabled,
+  /** Native title on the confirm button while it is disabled. */
+  confirmDisabledTitle,
 }) => {
   const isInfo = mode === CONFIRM_MODAL_MODE.INFO;
-  const dismissBlocked = !isInfo && confirmDisabled;
+  const isCancelDisabled = cancelDisabled ?? confirmDisabled;
+  const dismissBlocked = !isInfo && isCancelDisabled;
 
   useEffect(() => {
     if (!open) return undefined;
@@ -75,7 +80,7 @@ const ConfirmModal = ({
                 type="button"
                 className={styles.modalCancelBtn}
                 onClick={onCancel}
-                disabled={confirmDisabled}
+                disabled={isCancelDisabled}
               >
                 {cancelLabel}
               </button>
@@ -84,6 +89,11 @@ const ConfirmModal = ({
                 className={styles.modalConfirmBtn}
                 onClick={onConfirm}
                 disabled={confirmDisabled}
+                title={
+                  confirmDisabled && confirmDisabledTitle
+                    ? confirmDisabledTitle
+                    : undefined
+                }
               >
                 {confirmLabel}
               </button>

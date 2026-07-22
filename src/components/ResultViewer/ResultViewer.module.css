@@ -874,6 +874,54 @@
   font-size: 14px;
 }
 
+.modalBody p {
+  margin: 0 0 0.75em;
+}
+
+.modalBody p:last-child {
+  margin-bottom: 0;
+}
+
+.retryParameters {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.retryParameterField {
+  display: grid;
+  gap: 6px;
+}
+
+.retryParameterLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.retryParameterInput {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--bg-elevated, var(--bg-surface));
+  color: var(--text-primary);
+  padding: 10px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+}
+
+.retryParameterInput:focus {
+  outline: 2px solid rgba(26, 107, 154, 0.35);
+  outline-offset: 1px;
+}
+
+.retryParameterInput:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .modalActions {
   display: flex;
   justify-content: flex-end;

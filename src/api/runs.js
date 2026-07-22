@@ -135,6 +135,7 @@ export function buildResumeFormData({
   maxilla,
   mandible,
   file,
+  parameters = null,
 }) {
   const formData = new FormData();
   formData.append("from_step", String(fromStep));
@@ -149,6 +150,12 @@ export function buildResumeFormData({
     formData.append("file", file);
   }
 
+  if (parameters && typeof parameters === "object") {
+    Object.entries(parameters).forEach(([key, value]) => {
+      formData.append(key, value);
+    });
+  }
+
   return formData;
 }
 
@@ -160,6 +167,7 @@ export function buildResumeFormData({
  *   from_step          (required)
  *   maxilla / mandible (optional, jaw replace)
  *   file               (optional, single attachment replace)
+ *   ...parameters       (optional, dynamic retry stage keys)
  *
  * Returns a normalized shape for the UI:
  * { runId, statusUrl }

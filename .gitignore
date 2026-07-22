@@ -12,6 +12,10 @@
 
 # misc
 .DS_Store
+
+# Local / secret env files (keep .env.example and tracked shared defaults)
+.env
+.env.production
 .env.local
 .env.development.local
 .env.test.local

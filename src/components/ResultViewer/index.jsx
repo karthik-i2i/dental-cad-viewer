@@ -33,6 +33,7 @@ import useResumeActions, { RESUME_ACTION } from './hooks/useResumeActions';
 import useFileOverrides from './hooks/useFileOverrides';
 import useStageReadyNotifications from './hooks/useStageReadyNotifications';
 import StageReadyToast from './components/StageReadyToast';
+import { formatParameterLabel } from './retryParameters';
 
 const ResultViewer = ({
   resultUrl,
@@ -48,6 +49,8 @@ const ResultViewer = ({
 
   const initialRunId = scanData?.runId ?? null;
   const usingBackendProgress = Boolean(initialRunId);
+  /** Latest poll files[] for Retry parameters (read at dialog open only). */
+  const runFilesRef = useRef([]);
 
   const [autoRotate,  setAutoRotate]  = useState(false);
   const [activeView, setActiveView] = useState(null);
@@ -146,6 +149,7 @@ const ResultViewer = ({
     initialRunId,
     onResumeSuccess: handleResumeSuccess,
     downloadsReady: downloadsReadyFlag,
+    runFilesRef,
   });
 
   const {
@@ -161,6 +165,8 @@ const ResultViewer = ({
         ? null
         : resumeStep + 1,
   });
+
+  runFilesRef.current = runFiles;
 
   useEffect(() => {
     setRunSnapshot({ status: runStatus, currentStep: runCurrentStep });
@@ -586,6 +592,8 @@ const ResultViewer = ({
         onConfirm={handleRetryConfirm}
         onCancel={confirmModal.onCancel}
         confirmDisabled={confirmModal.confirmDisabled}
+        cancelDisabled={confirmModal.cancelDisabled}
+        confirmDisabledTitle={confirmModal.confirmDisabledTitle}
       >
         {isProcessingInfoModal ? (
           <>
@@ -602,10 +610,40 @@ const ResultViewer = ({
             </p>
           </>
         ) : (
-          <p>
-            Are you sure you want to retry from{' '}
-            <strong>{confirmModal.stageTitle || 'this stage'}</strong>?
-          </p>
+          <>
+            <p>
+              Are you sure you want to retry from{' '}
+              <strong>{confirmModal.stageTitle || 'this stage'}</strong>?
+            </p>
+            {Object.keys(confirmModal.parameterDraft || {}).length > 0 ? (
+              <div className={styles.retryParameters}>
+                {Object.entries(confirmModal.parameterDraft).map(
+                  ([key, value]) => (
+                    <label key={key} className={styles.retryParameterField}>
+                      <span className={styles.retryParameterLabel}>
+                        {formatParameterLabel(key)}
+                      </span>
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        className={styles.retryParameterInput}
+                        value={value}
+                        disabled={confirmModal.cancelDisabled}
+                        onChange={(event) =>
+                          confirmModal.onParameterChange?.(
+                            key,
+                            event.target.value
+                          )
+                        }
+                        autoComplete="off"
+                        spellCheck={false}
+                      />
+                    </label>
+                  )
+                )}
+              </div>
+            ) : null}
+          </>
         )}
       </ConfirmModal>
 
