@@ -151,6 +151,72 @@ Flow:
 
 ---
 
+## Running with Docker
+
+These instructions package **only the frontend** as a production static build served by nginx. The FastAPI backend is not included; run it separately on the host (default `http://localhost:8000`) if you need API calls to succeed.
+
+Prerequisites: [Docker](https://docs.docker.com/get-docker/) and Docker Compose v2.
+
+### Build the image
+
+From the `dental-cad-viewer` directory:
+
+```bash
+docker build -t dental-cad-viewer:local .
+```
+
+Optional build-time Vite variables (baked into the JS bundle):
+
+```bash
+docker build -t dental-cad-viewer:local \
+  --build-arg VITE_API_BASE_URL=http://localhost:8000 \
+  --build-arg VITE_USE_LOCAL_DEV_PIPELINE=true \
+  .
+```
+
+### Run the container
+
+```bash
+docker run --rm -p 3000:80 dental-cad-viewer:local
+```
+
+Open **http://localhost:3000** in your browser.  
+Port mapping: host `3000` → container nginx on `80`.
+
+### Docker Compose
+
+```bash
+# Build (if needed) and start in the foreground
+docker compose up --build
+
+# Or start detached
+docker compose up --build -d
+```
+
+Open **http://localhost:3000**.
+
+Stop and remove the compose stack:
+
+```bash
+docker compose down
+```
+
+Compose reads optional env vars for image **build args** (`VITE_API_BASE_URL`, `VITE_USE_LOCAL_DEV_PIPELINE`). Example:
+
+```bash
+# Windows (PowerShell)
+$env:VITE_API_BASE_URL="http://localhost:8000"
+$env:VITE_USE_LOCAL_DEV_PIPELINE="false"
+docker compose up --build
+
+# macOS / Linux
+VITE_API_BASE_URL=http://localhost:8000 \
+VITE_USE_LOCAL_DEV_PIPELINE=false \
+docker compose up --build
+```
+
+---
+
 ## Available npm scripts
 
 | Script | Command | Description |

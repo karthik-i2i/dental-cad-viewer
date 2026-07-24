@@ -1,0 +1,37 @@
+# Dependencies and build output
+node_modules
+dist
+build
+coverage
+
+# Git and editor
+.git
+.github
+.vscode
+.editorconfig
+.prettierignore
+.prettierrc.json
+eslint.config.js
+
+# Docs and license (not needed in the image)
+*.md
+LICENSE
+
+# Local env files (pass build args / compose env instead)
+.env
+.env.*
+
+# Tests (not needed for production image)
+src/**/__tests__
+src/**/*.test.js
+src/**/*.test.jsx
+src/test
+
+# Docker / misc
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+npm-debug.log*
+.DS_Store
+Thumbs.db
+.nvmrc
