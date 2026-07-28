@@ -98,11 +98,19 @@ Defined in `.env.example` and read from `src/config/env.js`. Only `VITE_`-prefix
 | Variable | Required | Default (if unset) | Description |
 |----------|----------|--------------------|-------------|
 | `VITE_API_BASE_URL` | No | `http://localhost:8000` | Backend origin (no trailing slash). Used by `src/api/client.js`. |
-| `VITE_USE_LOCAL_DEV_PIPELINE` | No | **`true`** (when unset) | When `true`, `createRun()` uploads fixed files from `public/dev/` instead of user scans. Set to `false` for the production upload payload (`maxilla` / `mandible`). |
+| `VITE_USE_LOCAL_DEV_PIPELINE` | No | **`false`** (Production Mode) | Explicit opt-in. When `true`, `createRun()` uploads fixed files from `public/dev/` instead of user scans. When unset or `false`, uses the production upload payload (`maxilla` / `mandible`). |
 
-**Important:** If `VITE_USE_LOCAL_DEV_PIPELINE` is omitted, the app behaves as if it were `true`. Explicitly set `VITE_USE_LOCAL_DEV_PIPELINE=false` when you need real Maxilla/Mandible uploads.
+**Local Development Mode** is intended **only** for developers on machines **without** the required AI license. Client deployments and licensed developer machines should leave `VITE_USE_LOCAL_DEV_PIPELINE` unset or set it to `false`.
 
-Example `.env.development`:
+**Important:** If the variable is omitted, the app uses **Production Mode** (real Maxilla/Mandible uploads). You must explicitly set `VITE_USE_LOCAL_DEV_PIPELINE=true` to use the bundled `public/dev/` sample files.
+
+Example `.env.development` (licensed / client-like — production create-run path):
+
+```env
+VITE_API_BASE_URL=http://localhost:8000
+```
+
+Example for an **unlicensed** developer machine (opt-in Local Development Mode):
 
 ```env
 VITE_API_BASE_URL=http://localhost:8000
@@ -165,14 +173,16 @@ From the `dental-cad-viewer` directory:
 docker build -t dental-cad-viewer:local .
 ```
 
-Optional build-time Vite variables (baked into the JS bundle):
+Optional build-time Vite variables (baked into the JS bundle). Defaults are production-safe (`VITE_USE_LOCAL_DEV_PIPELINE=false`):
 
 ```bash
 docker build -t dental-cad-viewer:local \
   --build-arg VITE_API_BASE_URL=http://localhost:8000 \
-  --build-arg VITE_USE_LOCAL_DEV_PIPELINE=true \
+  --build-arg VITE_USE_LOCAL_DEV_PIPELINE=false \
   .
 ```
+
+Unlicensed developers who need the local-dev sample upload path can pass `--build-arg VITE_USE_LOCAL_DEV_PIPELINE=true`.
 
 ### Run the container
 
@@ -201,7 +211,7 @@ Stop and remove the compose stack:
 docker compose down
 ```
 
-Compose reads optional env vars for image **build args** (`VITE_API_BASE_URL`, `VITE_USE_LOCAL_DEV_PIPELINE`). Example:
+Compose reads optional env vars for image **build args** (`VITE_API_BASE_URL`, `VITE_USE_LOCAL_DEV_PIPELINE`). Defaults leave Local Development Mode **off**. Example (explicit production path):
 
 ```bash
 # Windows (PowerShell)
@@ -214,6 +224,8 @@ VITE_API_BASE_URL=http://localhost:8000 \
 VITE_USE_LOCAL_DEV_PIPELINE=false \
 docker compose up --build
 ```
+
+To opt in to Local Development Mode for an unlicensed machine, set `VITE_USE_LOCAL_DEV_PIPELINE=true` before `docker compose up --build`.
 
 ---
 
@@ -263,7 +275,7 @@ npm run preview
 
 Output directory: **`dist/`**. Preview serves the build at http://localhost:3000.
 
-Ensure production env values (especially `VITE_API_BASE_URL` and `VITE_USE_LOCAL_DEV_PIPELINE`) are set at **build** time — Vite inlines `import.meta.env` during `vite build`.
+Ensure production env values are set at **build** time — Vite inlines `import.meta.env` during `vite build`. Set `VITE_API_BASE_URL` to the client API origin. Leave `VITE_USE_LOCAL_DEV_PIPELINE` unset or `false` for client builds (Production Mode is the default).
 
 ---
 
@@ -326,7 +338,7 @@ dental-cad-viewer/
 |---------|----------------|
 | `npm start` fails / engine warning | Use Node 24 (`nvm use` / `node -v` should be `v24.x`). |
 | Confirm & Process fails / network errors | Backend running? `VITE_API_BASE_URL` correct (no trailing slash)? Browser Network tab. |
-| Uploaded scans ignored by the API | Default local-dev pipeline is **on**. Set `VITE_USE_LOCAL_DEV_PIPELINE=false` and restart the dev server. |
+| Uploaded scans ignored by the API | Local Development Mode may be enabled. Unset `VITE_USE_LOCAL_DEV_PIPELINE` or set it to `false`, then restart the dev server / rebuild. |
 | Empty Result Viewer / no models | Run still processing? Polling errors? Backend returning `files[]`? |
 | Port 3000 in use | Stop the other process, or change `server.port` in `vite.config.js`. |
 | Tests fail after pull | `npm install` then `npm run test:ci`. |

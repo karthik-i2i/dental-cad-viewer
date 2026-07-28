@@ -22,6 +22,8 @@ npm start
 
 The app runs at http://localhost:3000. See the [README](./README.md) for environment variables and backend requirements.
 
+By default the app uses the **production** create-run path (real Maxilla/Mandible uploads). Local Development Mode (`VITE_USE_LOCAL_DEV_PIPELINE=true`) is an explicit opt-in for developers on machines without the required AI license — see the README environment section.
+
 ## Before opening a PR
 
 All of the following must pass locally (and in CI):
@@ -49,4 +51,4 @@ Run `npm run lint` and `npm run format` as needed. Do not bypass formatting/lint
 - Ensure GitHub Actions CI is green (lint, tests, build)
 - Include a short summary of what changed and how you tested it
 
-For bug reports, include reproduction steps, browser console output, and whether `VITE_USE_LOCAL_DEV_PIPELINE` is enabled.
+For bug reports, include reproduction steps, browser console output, and whether you explicitly enabled Local Development Mode (`VITE_USE_LOCAL_DEV_PIPELINE=true`).
