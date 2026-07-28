@@ -277,7 +277,7 @@ export const LOADING_MILESTONES = {
   },
   ACCEPTED: {
     id: 'accepted',
-    progress: 35,
+    progress: 25,
     message: 'Starting AI generation...',
   },
   /** Shown while backend current_step === "PRE" (same 35% ceiling as ACCEPTED). */
@@ -309,8 +309,8 @@ export const LOADING_PROGRESS_TRANSITION_MS = 450;
 /** Brief hold on FILES_READY (85%) before promoting to OPENING (100%). */
 export const LOADING_FILES_READY_HOLD_MS = 500;
 
-/** Hold at 100% before revealing the Result Viewer (ms). */
-export const LOADING_REVEAL_HOLD_MS = 700;
+/** Hold at OPENING (100%) before revealing the Result Viewer (ms). */
+export const LOADING_COMPLETE_HOLD_MS = 2000;
 
 /**
  * Demo/legacy timer progress only (useProgressSimulation).

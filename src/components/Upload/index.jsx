@@ -205,6 +205,7 @@ const UploadStep = ({ onConfirm, uploadState, uploadDispatch }) => {
             handleConfirm={handleConfirm}
             onReupload={resetWorkflow}
             disabledReason={confirmDisabledReason}
+            isSubmitting={phase === PHASE.SUBMITTING}
           />
 
           {error && <p className={styles.error}>{error}</p>}

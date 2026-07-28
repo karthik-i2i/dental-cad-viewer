@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  LOADING_COMPLETE_HOLD_MS,
   LOADING_FILES_READY_HOLD_MS,
-  LOADING_REVEAL_HOLD_MS,
 } from '../constants';
 import {
   getLoadingMilestone,
@@ -80,7 +80,7 @@ const useRunLoadingState = ({
 
     const revealTimer = window.setTimeout(() => {
       setCanRevealViewer(true);
-    }, LOADING_REVEAL_HOLD_MS);
+    }, LOADING_COMPLETE_HOLD_MS);
 
     return () => {
       window.clearTimeout(revealTimer);

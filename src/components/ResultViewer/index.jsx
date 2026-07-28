@@ -32,6 +32,7 @@ import useRunLoadingState from './hooks/useRunLoadingState';
 import useResumeActions, { RESUME_ACTION } from './hooks/useResumeActions';
 import useFileOverrides from './hooks/useFileOverrides';
 import useStageReadyNotifications from './hooks/useStageReadyNotifications';
+import useDisplayProgress from './hooks/useDisplayProgress';
 import StageReadyToast from './components/StageReadyToast';
 import { formatParameterLabel } from './retryParameters';
 
@@ -157,6 +158,7 @@ const ResultViewer = ({
     status: runStatus,
     files: runFiles,
     error: runError,
+    connectionLost,
   } = useRunPolling(activeRunId, {
     preserveStateOnRunChange: preserveRunState,
     // resumeStep + 1 keeps the retried stage visible (progressStep < currentStep).
@@ -211,8 +213,9 @@ const ResultViewer = ({
   }, [downloadsReady]);
 
   const {
-    progressPercentage: backendProgressPercentage,
     loadingMessage: backendLoadingMessage,
+    milestoneId: backendMilestoneId,
+    filesReady: backendFilesReady,
     viewerReady,
     visibleGroups,
   } = useRunLoadingState({
@@ -245,6 +248,25 @@ const ResultViewer = ({
     }
   }, [runError]);
 
+  const canRenderBackend = usingBackendProgress && viewerReady;
+  const canRenderSimulated = !usingBackendProgress && Boolean(resultUrl);
+  const canRender = canRenderBackend || canRenderSimulated;
+
+  // Presentation-only soft-fill while the fresh-run loading screen is visible.
+  // Reveal still depends solely on viewerReady from useRunLoadingState.
+  const isBackendLoadingScreen =
+    usingBackendProgress && Boolean(scanData) && !viewerReady;
+
+  const { displayPercent } = useDisplayProgress({
+    enabled: isBackendLoadingScreen,
+    resetKey: activeRunId,
+    hasRunId: Boolean(activeRunId),
+    status: runStatus,
+    currentStep: runCurrentStep,
+    filesReady: backendFilesReady,
+    milestoneId: backendMilestoneId,
+  });
+
   const {
     progressIndex,
     progressPercentage,
@@ -253,15 +275,11 @@ const ResultViewer = ({
   } = usingBackendProgress
     ? {
         progressIndex: 0,
-        progressPercentage: backendProgressPercentage,
+        progressPercentage: displayPercent,
         currentStep: backendLoadingMessage,
         totalSteps: null,
       }
     : simulatedProgress;
-
-  const canRenderBackend = usingBackendProgress && viewerReady;
-  const canRenderSimulated = !usingBackendProgress && Boolean(resultUrl);
-  const canRender = canRenderBackend || canRenderSimulated;
 
   useEffect(() => {
     setActionsViewerReady(canRender);
@@ -285,6 +303,7 @@ const ResultViewer = ({
         isResuming: usingBackendProgress && isResuming,
         hasRunId: usingBackendProgress,
         downloadsReady: usingBackendProgress ? downloadsReady : true,
+        connectionLost: usingBackendProgress && connectionLost,
       }),
     [
       usingBackendProgress,
@@ -295,6 +314,7 @@ const ResultViewer = ({
       isResuming,
       canRender,
       downloadsReady,
+      connectionLost,
     ]
   );
 
@@ -555,6 +575,7 @@ const ResultViewer = ({
               progressIndex={progressIndex}
               totalSteps={totalSteps}
               showStepCount={!usingBackendProgress}
+              transitionMs={usingBackendProgress ? 0 : undefined}
               subtitle={
                 usingBackendProgress
                   ? 'Your first models will appear shortly.'

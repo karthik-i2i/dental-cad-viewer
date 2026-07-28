@@ -3,12 +3,18 @@ import { getRun } from '../../../api/runs';
 import { RUN_STATUS, isTerminalStatus } from '../runLifecycle';
 
 const POLL_INTERVAL_MS = 2000;
+const POLL_RETRY_INTERVAL_MS = 30000;
+const CONNECTION_FAILURE_THRESHOLD = 10;
 
 const isMissingStep = (step) => step === null || step === undefined;
 
 /**
- * Polls GET /runs/{run_id} every 2s using setTimeout chaining (not
- * setInterval), so a slow request never overlaps with the next poll.
+ * Polls GET /runs/{run_id} using setTimeout chaining (not setInterval),
+ * so a slow request never overlaps with the next poll.
+ *
+ * Healthy backend: every 2s. After 10 consecutive connection failures:
+ * mark connectionLost and slow to 30s. Any successful poll resets both.
+ * AbortError does not count as a failure and does not reschedule.
  *
  * Stops polling when status is "done"/"failed", or on unmount.
  *
@@ -40,10 +46,12 @@ const useRunPolling = (runId, options = {}) => {
   const [files, setFiles] = useState([]);
   const [error, setError] = useState(null);
   const [isPolling, setIsPolling] = useState(false);
+  const [connectionLost, setConnectionLost] = useState(false);
 
   const timeoutIdRef = useRef(null);
   const abortControllerRef = useRef(null);
   const stoppedRef = useRef(false);
+  const consecutiveFailuresRef = useRef(0);
   const preserveRef = useRef(preserveStateOnRunChange);
   preserveRef.current = preserveStateOnRunChange;
   const seedStepRef = useRef(seedCurrentStep);
@@ -63,6 +71,8 @@ const useRunPolling = (runId, options = {}) => {
       setFiles([]);
     }
     setError(null);
+    consecutiveFailuresRef.current = 0;
+    setConnectionLost(false);
 
     if (!runId) {
       setIsPolling(false);
@@ -72,9 +82,9 @@ const useRunPolling = (runId, options = {}) => {
     stoppedRef.current = false;
     setIsPolling(true);
 
-    const scheduleNextPoll = () => {
+    const scheduleNextPoll = (intervalMs = POLL_INTERVAL_MS) => {
       if (stoppedRef.current) return;
-      timeoutIdRef.current = window.setTimeout(poll, POLL_INTERVAL_MS);
+      timeoutIdRef.current = window.setTimeout(poll, intervalMs);
     };
 
     async function poll() {
@@ -87,6 +97,8 @@ const useRunPolling = (runId, options = {}) => {
         const run = await getRun(runId, { signal: controller.signal });
         if (stoppedRef.current) return;
 
+        consecutiveFailuresRef.current = 0;
+        setConnectionLost(false);
         setStatus(run.status);
         setCurrentStep((prev) => {
           // Resume only: backend may briefly report null — keep seed / last step.
@@ -104,14 +116,23 @@ const useRunPolling = (runId, options = {}) => {
           return;
         }
 
-        scheduleNextPoll();
+        scheduleNextPoll(POLL_INTERVAL_MS);
       } catch (err) {
         if (err?.name === 'AbortError' || stoppedRef.current) return;
+
+        consecutiveFailuresRef.current += 1;
+        const lost =
+          consecutiveFailuresRef.current >= CONNECTION_FAILURE_THRESHOLD;
+        if (lost) {
+          setConnectionLost(true);
+        }
 
         setError(
           err instanceof Error ? err.message : 'Failed to fetch run status.'
         );
-        scheduleNextPoll();
+        scheduleNextPoll(
+          lost ? POLL_RETRY_INTERVAL_MS : POLL_INTERVAL_MS
+        );
       }
     }
 
@@ -135,6 +156,7 @@ const useRunPolling = (runId, options = {}) => {
     files,
     error,
     isPolling,
+    connectionLost,
   };
 };
 

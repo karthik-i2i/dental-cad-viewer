@@ -8,6 +8,8 @@ const ProgressState = ({
   progressIndex,
   totalSteps,
   showStepCount = true,
+  /** Set 0 when an external rAF loop owns the motion (backend display progress). */
+  transitionMs = LOADING_PROGRESS_TRANSITION_MS,
   subtitle = 'This is a prototype loading screen, the real AI build may take longer.',
 }) => {
   return (
@@ -29,7 +31,7 @@ const ProgressState = ({
           className={styles.progressBarFill}
           style={{
             width: `${progressPercentage}%`,
-            transitionDuration: `${LOADING_PROGRESS_TRANSITION_MS}ms`,
+            transitionDuration: `${transitionMs}ms`,
           }}
         >
           <span className={styles.progressBarShimmer} aria-hidden="true" />

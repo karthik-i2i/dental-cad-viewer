@@ -666,6 +666,7 @@ export const getResultStatusBadge = ({
   isResuming = false,
   hasRunId = false,
   downloadsReady = false,
+  connectionLost = false,
 } = {}) => {
   const stepDetail = getGeneratingStepLabel(currentStep);
   const lifecycle = deriveRunLifecycle(status);
@@ -678,6 +679,14 @@ export const getResultStatusBadge = ({
       tone: 'error',
       label: inResumeFlow ? 'Resume Failed' : 'Generation Failed',
       detail: null,
+    };
+  }
+
+  if (connectionLost) {
+    return {
+      tone: 'error',
+      label: 'Connection Lost',
+      detail: stepDetail ? `Last stage: ${stepDetail}` : null,
     };
   }
 

@@ -10,7 +10,15 @@ const ConfirmBar = ({
   handleConfirm,
   onReupload,
   disabledReason,
+  isSubmitting = false,
 }) => {
+  const confirmDisabled = !canProceed || isSubmitting;
+  const confirmTitle = isSubmitting
+    ? 'Creating AI job. Please wait...'
+    : !canProceed
+      ? disabledReason || undefined
+      : undefined;
+
   return (
     <div className={styles.confirmBar}>
       <div className={styles.confirmNote}>
@@ -31,11 +39,11 @@ const ConfirmBar = ({
           type="button"
           className={styles.confirmBtn}
           onClick={handleConfirm}
-          disabled={!canProceed}
-          title={!canProceed ? (disabledReason || undefined) : undefined}
+          disabled={confirmDisabled}
+          title={confirmTitle}
         >
-          Confirm & Process
-          <ArrowIcon />
+          {isSubmitting ? 'Creating AI Job...' : 'Confirm & Process'}
+          {!isSubmitting ? <ArrowIcon /> : null}
         </button>
       </div>
     </div>
