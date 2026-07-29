@@ -3,7 +3,7 @@ import { SELECTION_MODE } from '../constants';
 import { buildResumeApiPayload } from '../hooks/useResumeActions';
 
 describe('buildResumeApiPayload', () => {
-  it('returns fromStep only for Retry without replacements', () => {
+  it('Retry: sends from_step = N (no replacement files)', () => {
     expect(
       buildResumeApiPayload({
         fromStep: 4,
@@ -12,7 +12,7 @@ describe('buildResumeApiPayload', () => {
     ).toEqual({ fromStep: 4 });
   });
 
-  it('includes parameters when the draft is non-empty', () => {
+  it('Retry: keeps from_step = N when parameters are present', () => {
     expect(
       buildResumeApiPayload({
         fromStep: 4,
@@ -33,7 +33,7 @@ describe('buildResumeApiPayload', () => {
     ).toEqual({ fromStep: 4 });
   });
 
-  it('maps single-attachment replace files to file', () => {
+  it('Replace: sends from_step = N + 1 for single-attachment files', () => {
     const attachment = new File(['a'], 'wall.stl');
     expect(
       buildResumeApiPayload({
@@ -42,12 +42,12 @@ describe('buildResumeApiPayload', () => {
         replacementFiles: { attachment },
       })
     ).toEqual({
-      fromStep: 7,
+      fromStep: 8,
       file: attachment,
     });
   });
 
-  it('maps jaw replace files to maxilla/mandible fields', () => {
+  it('Replace: sends from_step = N + 1 for jaw files', () => {
     const maxilla = new File(['m'], 'max.stl');
     const mandible = new File(['n'], 'mand.stl');
     expect(
@@ -57,7 +57,7 @@ describe('buildResumeApiPayload', () => {
         replacementFiles: { maxilla, mandible },
       })
     ).toEqual({
-      fromStep: 2,
+      fromStep: 3,
       maxilla,
       mandible,
     });

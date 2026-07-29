@@ -20,6 +20,10 @@ import { getPipelineStepTitle } from '../utils';
 
 /**
  * Maps ReplaceDialog / Retry payloads into the resumeRun() API shape.
+ *
+ * fromStep is always the selected stage N from evaluation/snapshots.
+ * Retry multipart from_step stays N. Replace multipart from_step is N + 1
+ * (backend contract only — UI resumeStep / invalidation keep N).
  */
 export const buildResumeApiPayload = ({
   fromStep,
@@ -27,7 +31,9 @@ export const buildResumeApiPayload = ({
   selectionMode = null,
   parameters = null,
 }) => {
-  const payload = { fromStep };
+  const payload = {
+    fromStep: replacementFiles ? fromStep + 1 : fromStep,
+  };
 
   if (parameters && Object.keys(parameters).length > 0) {
     payload.parameters = parameters;
