@@ -11,12 +11,7 @@ import {
 
 const RETRY_PARAMETERS_INVALID_TITLE =
   'Enter a valid number for every parameter.';
-import {
-  RUN_STATUS,
-  canMutateRun,
-  deriveRunLifecycle,
-} from '../runLifecycle';
-import { getPipelineStepTitle } from '../utils';
+import { deriveRunLifecycle } from '../runLifecycle';
 
 /**
  * Maps ReplaceDialog / Retry payloads into the resumeRun() API shape.
@@ -90,7 +85,6 @@ const useResumeActions = ({
   const [confirmModalMode, setConfirmModalMode] = useState(
     CONFIRM_MODAL_MODE.CONFIRM
   );
-  const [confirmModalAction, setConfirmModalAction] = useState(null);
   const [replaceDialogOpen, setReplaceDialogOpen] = useState(false);
   const [retrySnapshot, setRetrySnapshot] = useState(null);
   const [replaceSnapshot, setReplaceSnapshot] = useState(null);
@@ -102,21 +96,18 @@ const useResumeActions = ({
   const [resumeStageTitle, setResumeStageTitle] = useState(null);
   const [resumeError, setResumeError] = useState(null);
   const [runStatus, setRunStatus] = useState(null);
-  const [runCurrentStep, setRunCurrentStep] = useState(null);
 
-  // Latest poll snapshot for hard-guard (avoids stale closures at confirm time).
+  // Latest poll snapshot (status / step) for UI consumers.
   const runSnapshotRef = useRef({ status: null, currentStep: null });
 
   const setRunSnapshot = useCallback(({ status = null, currentStep = null }) => {
     runSnapshotRef.current = { status, currentStep };
     setRunStatus(status);
-    setRunCurrentStep(currentStep);
   }, []);
 
   const resetConfirmModal = useCallback(() => {
     setConfirmModalOpen(false);
     setConfirmModalMode(CONFIRM_MODAL_MODE.CONFIRM);
-    setConfirmModalAction(null);
     setRetrySnapshot(null);
   }, []);
 
@@ -133,23 +124,22 @@ const useResumeActions = ({
     setReplaceSnapshot(null);
     runSnapshotRef.current = { status: null, currentStep: null };
     setRunStatus(null);
-    setRunCurrentStep(null);
   }, [initialRunId, resetConfirmModal]);
-
-  // Clear hand-off only once polling has seeded the NEW run as running.
-  // Do NOT clear on the previous run's mirrored status=done — that would
-  // reopen a one-render window where downloads could refetch stale folder bytes.
-  useEffect(() => {
-    if (!resumeTransition) return;
-    if (runStatus === RUN_STATUS.RUNNING) {
-      setResumeTransition(false);
-    }
-  }, [resumeTransition, runStatus]);
 
   const runLifecycle = useMemo(
     () => deriveRunLifecycle(runStatus),
     [runStatus]
   );
+
+  /**
+   * End resume hand-off once the NEW run has been seeded (files[] cleared).
+   * Mid-pipeline resume keeps the previous status=running, so status alone
+   * must not clear the guard — that would allow stale downstream downloads
+   * from the previous run's mirrored files[] before the poll seed runs.
+   */
+  const endResumeTransition = useCallback(() => {
+    setResumeTransition(false);
+  }, []);
 
   // Unlock only when terminal AND regenerated downloads are present.
   useEffect(() => {
@@ -162,22 +152,6 @@ const useResumeActions = ({
       setResumeSessionActive(false);
     }
   }, [resumeSessionActive, runLifecycle.failed, runLifecycle.completed, downloadsReady]);
-
-  // If the run settles while the processing info modal is open, dismiss it.
-  useEffect(() => {
-    if (
-      confirmModalOpen &&
-      confirmModalMode === CONFIRM_MODAL_MODE.INFO &&
-      runLifecycle.settled
-    ) {
-      resetConfirmModal();
-    }
-  }, [
-    confirmModalOpen,
-    confirmModalMode,
-    runLifecycle.settled,
-    resetConfirmModal,
-  ]);
 
   const evaluation = useMemo(
     () =>
@@ -198,32 +172,12 @@ const useResumeActions = ({
   const preserveRunState =
     resumeTransition || resumeSessionActive || isResuming;
 
-  const openProcessingInfoModal = useCallback((action) => {
-    setResumeError(null);
-    setReplaceDialogOpen(false);
-    setReplaceSnapshot(null);
-    setRetrySnapshot(null);
-    setConfirmModalAction(action);
-    setConfirmModalMode(CONFIRM_MODAL_MODE.INFO);
-    setConfirmModalOpen(true);
-  }, []);
-
-  /** Backend runs only — simulated/demo paths have no poll lifecycle. */
-  const isRunStillProcessing = useCallback(() => {
-    if (!activeRunId) return false;
-    return !canMutateRun(runSnapshotRef.current.status);
-  }, [activeRunId]);
-
   const openRetry = useCallback(() => {
     if (actionsLocked || !evaluation.canRetry) return;
 
-    if (isRunStillProcessing()) {
-      openProcessingInfoModal(RESUME_ACTION.RETRY);
-      return;
-    }
-
+    // Allowed while the pipeline is still running — only the selected stage
+    // must already be visible/complete (enforced by explorer eligibility).
     setResumeError(null);
-    setConfirmModalAction(RESUME_ACTION.RETRY);
     setConfirmModalMode(CONFIRM_MODAL_MODE.CONFIRM);
     // Freeze poll parameters at open — dialog must not track live polls.
     const parameterDraft = extractRetryParameters(
@@ -239,14 +193,7 @@ const useResumeActions = ({
       parameterDraft,
     });
     setConfirmModalOpen(true);
-  }, [
-    actionsLocked,
-    evaluation,
-    selectedFiles,
-    openProcessingInfoModal,
-    isRunStillProcessing,
-    runFilesRef,
-  ]);
+  }, [actionsLocked, evaluation, selectedFiles, runFilesRef]);
 
   const updateRetryParameter = useCallback((key, value) => {
     if (!isAllowedNumericDraftInput(value)) return;
@@ -270,15 +217,10 @@ const useResumeActions = ({
   const openReplace = useCallback(() => {
     if (actionsLocked || !evaluation.canReplace) return;
 
-    if (isRunStillProcessing()) {
-      openProcessingInfoModal(RESUME_ACTION.REPLACE);
-      return;
-    }
-
+    // Same as Retry: mid-pipeline Replace is allowed for completed stages.
     setResumeError(null);
     setConfirmModalOpen(false);
     setConfirmModalMode(CONFIRM_MODAL_MODE.CONFIRM);
-    setConfirmModalAction(null);
     setRetrySnapshot(null);
     setReplaceSnapshot({
       selectedFiles: [...selectedFiles],
@@ -288,13 +230,7 @@ const useResumeActions = ({
       selectionMode: evaluation.selectionMode,
     });
     setReplaceDialogOpen(true);
-  }, [
-    actionsLocked,
-    evaluation,
-    selectedFiles,
-    openProcessingInfoModal,
-    isRunStillProcessing,
-  ]);
+  }, [actionsLocked, evaluation, selectedFiles]);
 
   const closeReplace = useCallback(() => {
     if (isResuming) return;
@@ -316,11 +252,6 @@ const useResumeActions = ({
         throw new Error('Missing run id or from_step for resume.');
       }
 
-      // Hard guard — never call /resume while the run is still processing.
-      if (!canMutateRun(runSnapshotRef.current.status)) {
-        return null;
-      }
-
       const apiPayload = buildResumeApiPayload({
         fromStep,
         selectionMode,
@@ -337,6 +268,7 @@ const useResumeActions = ({
         previousStageTitle = prev;
         return stageTitle || null;
       });
+      // UI invalidation boundary = N (API may send N or N+1 for Replace).
       setResumeStep((prev) => {
         previousResumeStep = prev;
         return fromStep;
@@ -345,8 +277,9 @@ const useResumeActions = ({
       try {
         const result = await resumeRun(activeRunId, apiPayload);
 
-        // Invalidate BEFORE switching the polled run id so the first poll
-        // cannot re-cache stale downstream identities.
+        // Invalidate downstream (stages > N) BEFORE switching the polled run
+        // id. Backend returns a NEW run_id; shared folder still lists old
+        // downstream files — client must not re-cache them.
         onResumeSuccess?.({
           resumeStep: fromStep,
           stageTitle,
@@ -359,6 +292,7 @@ const useResumeActions = ({
 
         setResumeTransition(true);
         setResumeSessionActive(true);
+        // Immediately retarget polling at the new run.
         setActiveRunId(result.runId);
 
         resetConfirmModal();
@@ -388,13 +322,8 @@ const useResumeActions = ({
     const parameterDraft = retrySnapshot.parameterDraft || {};
     if (!areRetryParametersValid(parameterDraft)) return false;
 
-    if (isRunStillProcessing()) {
-      openProcessingInfoModal(RESUME_ACTION.RETRY);
-      return false;
-    }
-
     try {
-      const result = await executeResume({
+      await executeResume({
         fromStep: retrySnapshot.resumeStep,
         selectionMode: retrySnapshot.selectionMode,
         replacementFiles: null,
@@ -404,10 +333,6 @@ const useResumeActions = ({
         parameters:
           Object.keys(parameterDraft).length > 0 ? parameterDraft : null,
       });
-      if (!result) {
-        openProcessingInfoModal(RESUME_ACTION.RETRY);
-        return false;
-      }
       return {
         ok: true,
         resumeStep: retrySnapshot.resumeStep,
@@ -419,28 +344,14 @@ const useResumeActions = ({
     } catch {
       return false;
     }
-  }, [
-    retrySnapshot,
-    actionsLocked,
-    confirmModalMode,
-    executeResume,
-    openProcessingInfoModal,
-    isRunStillProcessing,
-  ]);
+  }, [retrySnapshot, actionsLocked, confirmModalMode, executeResume]);
 
   const confirmReplace = useCallback(
     async (dialogPayload) => {
       if (!dialogPayload || actionsLocked) return false;
 
-      if (isRunStillProcessing()) {
-        setReplaceDialogOpen(false);
-        setReplaceSnapshot(null);
-        openProcessingInfoModal(RESUME_ACTION.REPLACE);
-        return false;
-      }
-
       try {
-        const result = await executeResume({
+        await executeResume({
           fromStep: dialogPayload.resumeStep,
           selectionMode: dialogPayload.selectionMode,
           replacementFiles: dialogPayload.replacementFiles,
@@ -448,12 +359,6 @@ const useResumeActions = ({
           selectedForReplace: dialogPayload.selectedFiles,
           selectionForRestore: dialogPayload.selectedFiles,
         });
-        if (!result) {
-          setReplaceDialogOpen(false);
-          setReplaceSnapshot(null);
-          openProcessingInfoModal(RESUME_ACTION.REPLACE);
-          return false;
-        }
         return {
           ok: true,
           resumeStep: dialogPayload.resumeStep,
@@ -465,43 +370,13 @@ const useResumeActions = ({
         return false;
       }
     },
-    [
-      actionsLocked,
-      executeResume,
-      openProcessingInfoModal,
-      isRunStillProcessing,
-    ]
+    [actionsLocked, executeResume]
   );
 
-  const currentStepTitle = getPipelineStepTitle(runCurrentStep);
-
   const confirmModal = useMemo(() => {
-    const isInfo = confirmModalMode === CONFIRM_MODAL_MODE.INFO;
-    const isReplaceAction = confirmModalAction === RESUME_ACTION.REPLACE;
     const parameterDraft = retrySnapshot?.parameterDraft ?? {};
     const parametersValid = areRetryParametersValid(parameterDraft);
     const parametersInvalid = !parametersValid;
-
-    if (isInfo) {
-      return {
-        open: confirmModalOpen,
-        mode: CONFIRM_MODAL_MODE.INFO,
-        title: isReplaceAction ? 'Replace Unavailable' : 'Retry Unavailable',
-        action: confirmModalAction,
-        currentStepTitle,
-        stageTitle: null,
-        parameterDraft: {},
-        onParameterChange: undefined,
-        onConfirm: undefined,
-        onCancel: closeConfirmModal,
-        confirmDisabled: true,
-        cancelDisabled: false,
-        confirmDisabledTitle: undefined,
-        confirmLabel: 'OK',
-        cancelLabel: 'OK',
-        dismissLabel: 'OK',
-      };
-    }
 
     return {
       open: confirmModalOpen,
@@ -527,9 +402,6 @@ const useResumeActions = ({
     };
   }, [
     confirmModalOpen,
-    confirmModalMode,
-    confirmModalAction,
-    currentStepTitle,
     retrySnapshot,
     evaluation.stageTitle,
     confirmRetry,
@@ -555,6 +427,7 @@ const useResumeActions = ({
     preserveRunState,
     resumeError,
     clearResumeError: () => setResumeError(null),
+    endResumeTransition,
 
     openRetry,
     openReplace,

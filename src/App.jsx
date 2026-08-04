@@ -82,9 +82,13 @@ function App() {
       ) : (
         <>
           <div className="appHeader">
-            <h2 className="appTitle">
-              Kallisio Stentra Design System
-            </h2>
+            <div className="appBrand">
+              <img
+                className="appLogo"
+                src="/logo-kallisio.svg"
+                alt="Kallisio Stentra Design System"
+              />
+            </div>
             <div
               id={APP_HEADER_TOAST_ROOT_ID}
               className="appHeaderToastRoot"

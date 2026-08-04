@@ -122,6 +122,17 @@ export const getResumeDownloadInvalidationIdentities = (resumeStep) =>
 export const getResumeOverrideInvalidationIdentities = (resumeStep) =>
   new Set(RESUME_OVERRIDE_INVALIDATION[resumeStep] || []);
 
+/**
+ * Centralized pipeline invalidation boundary after Resume from step N.
+ * Stages/identities AFTER N are logically void until regenerated.
+ * Stages <= N stay intact (Replace may refresh overrides for N itself).
+ */
+export const getPipelineInvalidationBoundary = (resumeStep) => ({
+  resumeStep,
+  downloadIdentities: getResumeDownloadInvalidationIdentities(resumeStep),
+  overrideIdentities: getResumeOverrideInvalidationIdentities(resumeStep),
+});
+
 export const getSelectionForResumeStep = (files = [], resumeStep) => {
   const wanted = RESUME_SELECTION_IDENTITIES[resumeStep];
   if (!wanted?.length) return [];

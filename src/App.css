@@ -28,6 +28,22 @@
   min-width: 0;
 }
 
+.appBrand {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  min-width: 0;
+  position: relative;
+  z-index: 2;
+}
+
+.appLogo {
+  display: block;
+  height: 32px;
+  width: auto;
+  flex-shrink: 0;
+}
+
 /* Overlay slot for StageReadyToast — out of flow so header height never shifts. */
 .appHeaderToastRoot {
   position: absolute;

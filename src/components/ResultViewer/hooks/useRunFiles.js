@@ -75,6 +75,9 @@ const useRunFiles = (runId, runFiles, options = {}) => {
   const identityKeysRef = useRef(new Set());
   const objectUrlsRef = useRef(new Set());
   const isMountedRef = useRef(true);
+  // Bumped on invalidate / non-preserve run switch so in-flight fetches from
+  // the abandoned pipeline cannot re-insert stale downstream blobs.
+  const downloadGenerationRef = useRef(0);
   const preserveRef = useRef(preserveCache);
   preserveRef.current = preserveCache;
 
@@ -93,8 +96,14 @@ const useRunFiles = (runId, runFiles, options = {}) => {
 
   // Reset cache on run change unless resume asked us to keep upstream blobs.
   useEffect(() => {
-    if (preserveRef.current) return;
+    if (preserveRef.current) {
+      // Resume hand-off: keep upstream blobs, but drop any in-flight completes
+      // that belonged to the previous run_id's download generation.
+      downloadGenerationRef.current += 1;
+      return;
+    }
 
+    downloadGenerationRef.current += 1;
     objectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
     objectUrlsRef.current = new Set();
     inFlightDownloadsRef.current = new Set();
@@ -111,8 +120,10 @@ const useRunFiles = (runId, runFiles, options = {}) => {
   }, [downloadedFiles]);
 
   /**
-   * Hard-remove cached files by logical identity.
+   * Hard-remove cached files by logical identity (pipeline invalidation
+   * boundary: everything AFTER resume step N).
    * Clears object URLs + url/identity indexes so regenerated meshes can download.
+   * Also bumps downloadGeneration so mid-flight fetches cannot re-add them.
    */
   const invalidateIdentities = useCallback((identityKeys) => {
     const toRemove =
@@ -121,6 +132,8 @@ const useRunFiles = (runId, runFiles, options = {}) => {
         : new Set(identityKeys || []);
 
     if (toRemove.size === 0) return;
+
+    downloadGenerationRef.current += 1;
 
     setDownloadedFiles((prev) => {
       const kept = [];
@@ -183,12 +196,20 @@ const useRunFiles = (runId, runFiles, options = {}) => {
       inFlightDownloadsRef.current.add(file.download_url)
     );
 
+    const generationAtStart = downloadGenerationRef.current;
+
     newEntries.forEach(async (file) => {
       const identity = getRunFileIdentityKey(file.name);
 
       try {
         const blob = await fetchRunFile(file.download_url);
         if (!isMountedRef.current) return;
+
+        // Resume / invalidate happened while this fetch was in flight — discard.
+        if (generationAtStart !== downloadGenerationRef.current) {
+          inFlightDownloadsRef.current.delete(file.download_url);
+          return;
+        }
 
         // Identity may have been filled by a parallel fetch — drop this one.
         if (identityKeysRef.current.has(identity)) {
@@ -198,6 +219,14 @@ const useRunFiles = (runId, runFiles, options = {}) => {
         }
 
         const objectUrl = URL.createObjectURL(blob);
+
+        // Re-check after creating the URL (invalidate may have raced).
+        if (generationAtStart !== downloadGenerationRef.current) {
+          URL.revokeObjectURL(objectUrl);
+          inFlightDownloadsRef.current.delete(file.download_url);
+          return;
+        }
+
         objectUrlsRef.current.add(objectUrl);
         identityKeysRef.current.add(identity);
         inFlightDownloadsRef.current.delete(file.download_url);
@@ -233,7 +262,9 @@ const useRunFiles = (runId, runFiles, options = {}) => {
       } catch (err) {
         // Drop from in-flight so the next polling cycle retries naturally.
         inFlightDownloadsRef.current.delete(file.download_url);
-        identityKeysRef.current.delete(identity);
+        if (generationAtStart === downloadGenerationRef.current) {
+          identityKeysRef.current.delete(identity);
+        }
 
         if (isTransientDownloadError(err)) {
           // Expected race: file exposed slightly before it is fully written.

@@ -8,7 +8,7 @@ import EmptyState from './components/EmptyState';
 import ProgressState from './components/ProgressState';
 import ModelExplorer from './components/ModelExplorer';
 import ViewerToolbar from './components/ViewerToolbar';
-import ConfirmModal, { CONFIRM_MODAL_MODE } from './components/ConfirmModal';
+import ConfirmModal from './components/ConfirmModal';
 import ReplaceDialog from '../ReplaceDialog';
 import { useDownloadZip } from './hooks/useDownloadZip';
 import {
@@ -21,15 +21,14 @@ import {
 import { RUN_STATUS, canMutateRun } from './runLifecycle';
 import {
   areExpectedDownloadsReady,
-  getResumeDownloadInvalidationIdentities,
-  getResumeOverrideInvalidationIdentities,
+  getPipelineInvalidationBoundary,
   getSelectionForResumeStep,
 } from './resumeInvalidation';
 import useProgressSimulation from './hooks/useProgressSimulation';
 import useRunPolling from './hooks/useRunPolling';
 import useRunFiles from './hooks/useRunFiles';
 import useRunLoadingState from './hooks/useRunLoadingState';
-import useResumeActions, { RESUME_ACTION } from './hooks/useResumeActions';
+import useResumeActions from './hooks/useResumeActions';
 import useFileOverrides from './hooks/useFileOverrides';
 import useStageReadyNotifications from './hooks/useStageReadyNotifications';
 import useDisplayProgress from './hooks/useDisplayProgress';
@@ -86,7 +85,8 @@ const ResultViewer = ({
 
   /**
    * Coordinated resume sync — runs before activeRunId switches:
-   * invalidate downstream cache + overrides, then attach Replace blobs.
+   * apply pipeline invalidation boundary (drop stages > N), then attach
+   * Replace blobs for stage N. Polling immediately follows on the new run_id.
    */
   const handleResumeSuccess = useCallback(
     ({
@@ -97,12 +97,9 @@ const ResultViewer = ({
     }) => {
       if (resumeStep === null || resumeStep === undefined) return;
 
-      invalidateIdentitiesRef.current?.(
-        getResumeDownloadInvalidationIdentities(resumeStep)
-      );
-      invalidateOverridesRef.current?.(
-        getResumeOverrideInvalidationIdentities(resumeStep)
-      );
+      const boundary = getPipelineInvalidationBoundary(resumeStep);
+      invalidateIdentitiesRef.current?.(boundary.downloadIdentities);
+      invalidateOverridesRef.current?.(boundary.overrideIdentities);
 
       const restoreSource =
         selectionForRestore?.length > 0
@@ -137,6 +134,7 @@ const ResultViewer = ({
     actionsLocked,
     isResuming,
     resumeError,
+    endResumeTransition,
     canRetry,
     canReplace,
     tooltip,
@@ -173,6 +171,16 @@ const ResultViewer = ({
   useEffect(() => {
     setRunSnapshot({ status: runStatus, currentStep: runCurrentStep });
   }, [runStatus, runCurrentStep, setRunSnapshot]);
+
+  // End resume download hand-off only after the new run is seeded with
+  // files[] = [] (preserve path). Status=running alone is unsafe mid-pipeline
+  // because the previous run was already running.
+  useEffect(() => {
+    if (!resumeTransition) return;
+    if (runStatus === RUN_STATUS.RUNNING && runFiles.length === 0) {
+      endResumeTransition();
+    }
+  }, [resumeTransition, runStatus, runFiles.length, endResumeTransition]);
 
   const { downloadedFiles, invalidateIdentities } = useRunFiles(
     activeRunId,
@@ -508,9 +516,6 @@ const ResultViewer = ({
     await replaceDialog.onConfirm(payload);
   };
 
-  const isProcessingInfoModal =
-    confirmModal.mode === CONFIRM_MODAL_MODE.INFO;
-
   return (
     <div className={styles.container}>
 
@@ -616,56 +621,38 @@ const ResultViewer = ({
         cancelDisabled={confirmModal.cancelDisabled}
         confirmDisabledTitle={confirmModal.confirmDisabledTitle}
       >
-        {isProcessingInfoModal ? (
-          <>
-            <p>AI is still generating the models.</p>
-            {confirmModal.currentStepTitle ? (
-              <p>
-                Current step: <strong>{confirmModal.currentStepTitle}</strong>
-              </p>
-            ) : null}
-            <p>
-              {confirmModal.action === RESUME_ACTION.REPLACE
-                ? 'Please wait until processing completes before replacing the model.'
-                : 'Please wait until processing completes before retrying.'}
-            </p>
-          </>
-        ) : (
-          <>
-            <p>
-              Are you sure you want to retry from{' '}
-              <strong>{confirmModal.stageTitle || 'this stage'}</strong>?
-            </p>
-            {Object.keys(confirmModal.parameterDraft || {}).length > 0 ? (
-              <div className={styles.retryParameters}>
-                {Object.entries(confirmModal.parameterDraft).map(
-                  ([key, value]) => (
-                    <label key={key} className={styles.retryParameterField}>
-                      <span className={styles.retryParameterLabel}>
-                        {formatParameterLabel(key)}
-                      </span>
-                      <input
-                        type="text"
-                        inputMode="decimal"
-                        className={styles.retryParameterInput}
-                        value={value}
-                        disabled={confirmModal.cancelDisabled}
-                        onChange={(event) =>
-                          confirmModal.onParameterChange?.(
-                            key,
-                            event.target.value
-                          )
-                        }
-                        autoComplete="off"
-                        spellCheck={false}
-                      />
-                    </label>
-                  )
-                )}
-              </div>
-            ) : null}
-          </>
-        )}
+        <p>
+          Are you sure you want to retry from{' '}
+          <strong>{confirmModal.stageTitle || 'this stage'}</strong>?
+        </p>
+        {Object.keys(confirmModal.parameterDraft || {}).length > 0 ? (
+          <div className={styles.retryParameters}>
+            {Object.entries(confirmModal.parameterDraft).map(
+              ([key, value]) => (
+                <label key={key} className={styles.retryParameterField}>
+                  <span className={styles.retryParameterLabel}>
+                    {formatParameterLabel(key)}
+                  </span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    className={styles.retryParameterInput}
+                    value={value}
+                    disabled={confirmModal.cancelDisabled}
+                    onChange={(event) =>
+                      confirmModal.onParameterChange?.(
+                        key,
+                        event.target.value
+                      )
+                    }
+                    autoComplete="off"
+                    spellCheck={false}
+                  />
+                </label>
+              )
+            )}
+          </div>
+        ) : null}
       </ConfirmModal>
 
       <ReplaceDialog

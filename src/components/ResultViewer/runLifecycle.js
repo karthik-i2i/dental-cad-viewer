@@ -49,5 +49,9 @@ export const deriveRunLifecycle = (status) => {
   };
 };
 
-/** True when POST /resume is allowed by backend contract (run finished). */
+/**
+ * True when the run is settled (done/failed).
+ * Used for nav lock (Go Back / Go Home) while a pipeline is active.
+ * Retry/Replace are NOT gated on this — mid-pipeline resume is allowed.
+ */
 export const canMutateRun = (status) => deriveRunLifecycle(status).settled;

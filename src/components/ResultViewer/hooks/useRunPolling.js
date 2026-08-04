@@ -17,6 +17,8 @@ const isMissingStep = (step) => step === null || step === undefined;
  * AbortError does not count as a failure and does not reschedule.
  *
  * Stops polling when status is "done"/"failed", or on unmount.
+ * On Resume, activeRunId switches to a NEW run_id — this effect remounts,
+ * aborts the previous poll, and seeds running + seedCurrentStep.
  *
  * @param {string|null} runId
  * @param {{
