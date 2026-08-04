@@ -2,18 +2,18 @@
 
 :root {
   /* Surfaces */
-  --bg-primary: #F5F8FB;
+  --bg-primary: #FAFDFF;
   --bg-surface: #FFFFFF;
   --bg-elevated: #EEF3F8;
   --border: #D7E2EC;
   --border-strong: #B7C9D8;
 
-  /* Primary / interactive (clinical navy → blue) */
-  --blue-50: #E8F1F7;
-  --blue-100: #C5D9E8;
-  --blue-500: #1A6B9A;
-  --blue-600: #155A84;
-  --blue-700: #0B3A5C;
+  /* Primary / interactive (Kallisio brand blue family) */
+  --blue-50: #EEF8FE;
+  --blue-100: #C5E3F5;
+  --blue-500: #0781C5;
+  --blue-600: #066BA3;
+  --blue-700: #054F7A;
   --blue-900: #0F2438;
 
   /* Accent (refined teal) */
@@ -57,6 +57,9 @@
   --space-5: 24px;
   --space-6: 32px;
   --space-7: 48px;
+
+  /* Shared page layout (matches existing Upload max width) */
+  --page-max-width: 1200px;
 
   /* Motion */
   --transition-fast: 140ms ease;

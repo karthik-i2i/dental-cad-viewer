@@ -1,7 +1,8 @@
 /* ── Base container ─────────────────────────────────────────────────────────── */
+/* Width comes from shared .pageContainer in App; fill that column. */
 .container {
-  width: min(1200px, 100%);
-  margin: var(--space-4) auto var(--space-6);
+  width: 100%;
+  margin: var(--space-4) 0 var(--space-6);
   animation: fadeUp var(--transition-enter) ease both;
 }
 

@@ -86,9 +86,9 @@ const Header = ({
           </span>
         </div>
 
-        <h2 className={styles.headerTitle}>
+        {/* <h2 className={styles.headerTitle}>
           3D CAD Model
-        </h2>
+        </h2> */}
       </div>
 
       <div className={styles.headerActions}>

@@ -82,32 +82,34 @@ function App() {
       ) : (
         <>
           <div className="appHeader">
-            <div className="appBrand">
-              <img
-                className="appLogo"
-                src="/logo-kallisio.svg"
-                alt="Kallisio Stentra Design System"
+            <div className="pageContainer appHeaderInner">
+              <div className="appBrand">
+                <img
+                  className="appLogo"
+                  src="/logo-kallisio.svg"
+                  alt="Kallisio Stentra Design System"
+                />
+              </div>
+              <div
+                id={APP_HEADER_TOAST_ROOT_ID}
+                className="appHeaderToastRoot"
+                aria-live="off"
               />
-            </div>
-            <div
-              id={APP_HEADER_TOAST_ROOT_ID}
-              className="appHeaderToastRoot"
-              aria-live="off"
-            />
-            <div className="appHeaderRight">
-              <span className="appWelcome">
-                Welcome, {user?.userName || 'User'}
-              </span>
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="logoutBtn"
-              >
-                Logout
-              </button>
+              <div className="appHeaderRight">
+                <span className="appWelcome">
+                  Welcome, {user?.userName || 'User'}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="logoutBtn"
+                >
+                  Logout
+                </button>
+              </div>
             </div>
           </div>
-          <div className="appContent">
+          <div className="pageContainer appContent">
             {step === "upload" ? (
               <UploadStep
                 onConfirm={handleConfirm}
