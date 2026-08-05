@@ -309,7 +309,10 @@ export const LOADING_PROGRESS_TRANSITION_MS = 450;
 /** Brief hold on FILES_READY (85%) before promoting to OPENING (100%). */
 export const LOADING_FILES_READY_HOLD_MS = 500;
 
-/** Hold at OPENING (100%) before revealing the Result Viewer (ms). */
+/**
+ * Hold after the visible bar reaches 100% (displayComplete) before revealing
+ * the Result Viewer (ms). Not started from forceOpening alone.
+ */
 export const LOADING_COMPLETE_HOLD_MS = 2000;
 
 /**

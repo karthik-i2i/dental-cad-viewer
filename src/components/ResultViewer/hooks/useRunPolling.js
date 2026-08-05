@@ -20,6 +20,11 @@ const isMissingStep = (step) => step === null || step === undefined;
  * On Resume, activeRunId switches to a NEW run_id — this effect remounts,
  * aborts the previous poll, and seeds running + seedCurrentStep.
  *
+ * confirmedPollSnapshot is written only after a successful GET that survives
+ * stale-response guards. It is never populated from optimistic seed, poll
+ * start, errors, or aborts. Resume hand-off ends when its runId matches
+ * the active run (shared run_dir may return a full files[] immediately).
+ *
  * @param {string|null} runId
  * @param {{
  *   preserveStateOnRunChange?: boolean,
@@ -36,6 +41,7 @@ const isMissingStep = (step) => step === null || step === undefined;
  *   (preserve=false) still treat null normally.
  * - Clear files[] so old download_urls are not reused; useRunFiles keeps
  *   upstream blobs via preserveCache.
+ * - Reset confirmedPollSnapshot to null until the first real GET succeeds.
  */
 const useRunPolling = (runId, options = {}) => {
   const {
@@ -49,6 +55,8 @@ const useRunPolling = (runId, options = {}) => {
   const [error, setError] = useState(null);
   const [isPolling, setIsPolling] = useState(false);
   const [connectionLost, setConnectionLost] = useState(false);
+  // Atomic confirmed GET payload — null until a real poll commits for runId.
+  const [confirmedPollSnapshot, setConfirmedPollSnapshot] = useState(null);
 
   const timeoutIdRef = useRef(null);
   const abortControllerRef = useRef(null);
@@ -58,10 +66,17 @@ const useRunPolling = (runId, options = {}) => {
   preserveRef.current = preserveStateOnRunChange;
   const seedStepRef = useRef(seedCurrentStep);
   seedStepRef.current = seedCurrentStep;
+  // Latest committed step for preserve-null resolution in the success path.
+  const currentStepRef = useRef(currentStep);
+  currentStepRef.current = currentStep;
 
   useEffect(() => {
+    // New runId (or clear): drop confirmation until a real GET succeeds.
+    setConfirmedPollSnapshot(null);
+
     if (preserveRef.current) {
       // Optimistic resume progress — never inherit previous status=done.
+      // Does NOT write confirmedPollSnapshot.
       setStatus(RUN_STATUS.RUNNING);
       setCurrentStep(
         isMissingStep(seedStepRef.current) ? null : seedStepRef.current
@@ -101,15 +116,24 @@ const useRunPolling = (runId, options = {}) => {
 
         consecutiveFailuresRef.current = 0;
         setConnectionLost(false);
-        setStatus(run.status);
-        setCurrentStep((prev) => {
-          // Resume only: backend may briefly report null — keep seed / last step.
-          if (preserveRef.current && isMissingStep(run.current_step)) {
-            return prev;
-          }
-          return run.current_step;
+
+        const nextStatus = run.status;
+        const nextCurrentStep =
+          preserveRef.current && isMissingStep(run.current_step)
+            ? currentStepRef.current
+            : run.current_step;
+        const nextFiles = run.files || [];
+
+        // Commit live poll fields and confirmation atomically (one batch).
+        setStatus(nextStatus);
+        setCurrentStep(nextCurrentStep);
+        setFiles(nextFiles);
+        setConfirmedPollSnapshot({
+          runId,
+          status: nextStatus,
+          currentStep: nextCurrentStep,
+          files: nextFiles,
         });
-        setFiles(run.files || []);
         setError(null);
 
         if (isTerminalStatus(run.status)) {
@@ -159,6 +183,7 @@ const useRunPolling = (runId, options = {}) => {
     error,
     isPolling,
     connectionLost,
+    confirmedPollSnapshot,
   };
 };
 

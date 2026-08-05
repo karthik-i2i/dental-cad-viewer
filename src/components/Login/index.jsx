@@ -44,58 +44,17 @@ export default function LoginStep({ onLogin, onRegister }) {
   return (
     <div className={styles.container}>
       <div className={styles.loginCard}>
-        {/* Header with Logo and Branding */}
         <div className={styles.header}>
           <div className={styles.logoContainer}>
-            <svg 
-              viewBox="0 0 120 120" 
-              xmlns="http://www.w3.org/2000/svg"
+            <img
               className={styles.logo}
-            >
-              {/* Background circle */}
-              <circle cx="60" cy="60" r="55" fill="#ffffff" opacity="0.1" />
-              
-              {/* Main tooth - filled */}
-              <path
-                d="M 50 25 C 45 25 40 30 40 40 L 40 75 C 40 85 48 95 60 100 C 72 95 80 85 80 75 L 80 40 C 80 30 75 25 70 25 C 65 25 60 20 60 20 C 60 20 55 25 50 25 Z"
-                fill="#ffffff"
-                stroke="#0F2438"
-                strokeWidth="1.5"
-              />
-              
-              {/* Highlight on tooth */}
-              <ellipse cx="55" cy="45" rx="5" ry="10" fill="#0F2438" opacity="0.15" />
-              
-              {/* Stent/Shield accent */}
-              <path
-                d="M 45 70 L 75 70"
-                stroke="#179E97"
-                strokeWidth="3"
-                strokeLinecap="round"
-              />
-              
-              {/* DNA helix lines */}
-              <path
-                d="M 50 80 Q 60 85 70 80"
-                stroke="#1DB8B0"
-                strokeWidth="2.5"
-                fill="none"
-                strokeLinecap="round"
-              />
-              <path
-                d="M 50 88 Q 60 93 70 88"
-                stroke="#1DB8B0"
-                strokeWidth="2.5"
-                fill="none"
-                strokeLinecap="round"
-              />
-            </svg>
+              src="/logo-kallisio.svg"
+              alt="Kallisio Stentra Design System"
+            />
           </div>
-          <h1 className={styles.brandName}>kallisio</h1>
-          <p className={styles.subtitle}>Stentra Design System </p>
+          <p className={styles.subtitle}>Sign in to continue</p>
         </div>
 
-        {/* Login Form */}
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.formGroup}>
             <label htmlFor="email" className={styles.label}>
@@ -144,9 +103,8 @@ export default function LoginStep({ onLogin, onRegister }) {
           </button>
         </form>
 
-        {/* Register Option */}
         <div className={styles.divider}>or</div>
-        
+
         <button
           type="button"
           className={styles.demoBtn}
@@ -156,16 +114,12 @@ export default function LoginStep({ onLogin, onRegister }) {
           Register
         </button>
 
-        {/* Footer */}
         <div className={styles.footer}>
           <p className={styles.footerText}>
             Kallisio Inc. proprietary & confidential
           </p>
         </div>
       </div>
-
-      {/* Background accent */}
-      <div className={styles.bgAccent}></div>
     </div>
   );
 }

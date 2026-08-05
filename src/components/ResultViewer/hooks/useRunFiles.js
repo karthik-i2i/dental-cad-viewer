@@ -41,7 +41,7 @@ const isTransientDownloadError = (err) =>
  *   isArtifactEligible (progressStep < currentStep) — same rule for initial
  *   runs and Retry/Replace resume.
  * - While resumeTransition is true, no new downloads are scheduled (hand-off
- *   guard against the previous run's mirrored status=done + full files[]).
+ *   until the first confirmed poll for the new runId is committed).
  *
  * @param {string|null} runId
  * @param {array} runFiles
@@ -163,8 +163,8 @@ const useRunFiles = (runId, runFiles, options = {}) => {
   useEffect(() => {
     if (!runId || !runFiles || runFiles.length === 0) return;
 
-    // Resume hand-off: previous run's done + full files[] may still be mirrored
-    // until polling seeds status=running / files=[]. Do not schedule fetches.
+    // Resume hand-off: block fetches until the first confirmed poll for the
+    // new runId lands (see confirmedPollSnapshot / endResumeTransition).
     if (resumeTransition) return;
 
     const eligibility = eligibilityRef.current;

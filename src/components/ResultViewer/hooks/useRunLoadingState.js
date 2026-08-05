@@ -15,10 +15,17 @@ import {
  *
  * Progress % tracks milestone values only (15 / 35 / 65 / 85 / 100).
  * No fabricated in-between percentages — the bar stays put during waits;
- * ProgressState provides a shimmer so the UI still feels alive.
+ * ProgressState / useDisplayProgress provide soft-fill motion.
  *
- * @param {{ preserveViewer?: boolean }} When true (resume transition),
- *   do not collapse back to the loading screen on runId change.
+ * Reveal hold (LOADING_COMPLETE_HOLD_MS) starts only after displayComplete
+ * — i.e. the visible bar has reached 100% — not when forceOpening flips.
+ *
+ * @param {{
+ *   preserveViewer?: boolean,
+ *   displayComplete?: boolean,
+ * }} When preserveViewer is true (resume), do not collapse back to the
+ *   loading screen on runId change. displayComplete comes from
+ *   useDisplayProgress (visible bar at 100%).
  */
 const useRunLoadingState = ({
   runId,
@@ -28,6 +35,7 @@ const useRunLoadingState = ({
   preserveViewer = false,
   resumeSessionActive = false,
   resumeStep = null,
+  displayComplete = false,
 }) => {
   const filesReady = useMemo(
     () => isViewerReady(downloadedFiles),
@@ -73,10 +81,18 @@ const useRunLoadingState = ({
     };
   }, [filesReady, preserveViewer]);
 
-  // After OPENING (100%), hold so the user sees completion, then reveal.
+  // Hold at visible 100%, then reveal. Do not start from forceOpening alone —
+  // displayPercent must finish easing to 100 first (displayComplete).
   useEffect(() => {
     if (preserveViewer) return undefined;
-    if (!filesReady || !forceOpening || canRevealViewer) return undefined;
+    if (
+      !filesReady ||
+      !forceOpening ||
+      !displayComplete ||
+      canRevealViewer
+    ) {
+      return undefined;
+    }
 
     const revealTimer = window.setTimeout(() => {
       setCanRevealViewer(true);
@@ -85,7 +101,13 @@ const useRunLoadingState = ({
     return () => {
       window.clearTimeout(revealTimer);
     };
-  }, [filesReady, forceOpening, canRevealViewer, preserveViewer]);
+  }, [
+    filesReady,
+    forceOpening,
+    displayComplete,
+    canRevealViewer,
+    preserveViewer,
+  ]);
 
   const milestone = useMemo(
     () =>

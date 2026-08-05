@@ -8,13 +8,17 @@ import { getDisplayCheckpoint } from '../displayProgress';
  */
 export const DISPLAY_EASING_FACTOR = 0.08;
 
+/** Matches the rAF snap threshold — treat bar as visually at 100%. */
+export const DISPLAY_COMPLETE_EPSILON = 0.01;
+
 /**
  * Presentation-only loading bar animation.
  *
  * Eases displayPercent toward the current checkpoint: floor first (when
  * below it), then softCeiling. Never snaps/teleports to a new floor.
  * Never exceeds softCeiling; never moves backwards within a run.
- * Does not touch viewerReady, filesReady, reveal timers, polling, or downloads.
+ * Exposes displayComplete for reveal timing; does not own reveal, polling,
+ * downloads, or filesReady.
  *
  * Multi-checkpoint backend jumps animate toward the *current* checkpoint
  * floor only — intermediate floors are not visited.
@@ -107,7 +111,7 @@ const useDisplayProgress = ({
 
       if (next < target) {
         next += (target - next) * DISPLAY_EASING_FACTOR;
-        if (target - next < 0.01) {
+        if (target - next < DISPLAY_COMPLETE_EPSILON) {
           next = target;
         }
         if (next > target) {
@@ -143,8 +147,13 @@ const useDisplayProgress = ({
     };
   }, [enabled, resetKey]);
 
+  const visiblePercent = enabled ? displayPercent : 0;
+  const displayComplete =
+    enabled && visiblePercent >= 100 - DISPLAY_COMPLETE_EPSILON;
+
   return {
-    displayPercent: enabled ? displayPercent : 0,
+    displayPercent: visiblePercent,
+    displayComplete,
     checkpointId: checkpoint.id,
   };
 };

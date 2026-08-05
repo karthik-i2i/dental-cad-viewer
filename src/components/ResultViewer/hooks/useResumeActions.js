@@ -132,10 +132,9 @@ const useResumeActions = ({
   );
 
   /**
-   * End resume hand-off once the NEW run has been seeded (files[] cleared).
-   * Mid-pipeline resume keeps the previous status=running, so status alone
-   * must not clear the guard — that would allow stale downstream downloads
-   * from the previous run's mirrored files[] before the poll seed runs.
+   * Clears the short download hand-off guard. ResultViewer calls this after
+   * useRunPolling commits confirmedPollSnapshot for the new activeRunId
+   * (first successful GET — not optimistic seed).
    */
   const endResumeTransition = useCallback(() => {
     setResumeTransition(false);
@@ -161,7 +160,10 @@ const useResumeActions = ({
     [selectedFiles, viewerReady]
   );
 
-  const actionsLocked = isResuming || resumeTransition || resumeSessionActive;
+  // Lock only during the POST and the short poll/download hand-off.
+  // resumeSessionActive stays for preserve/badge/auto-select — not for action gating
+  // (backend allows another resume while the resumed run is still running).
+  const actionsLocked = isResuming || resumeTransition;
 
   const actionTooltip = actionsLocked
     ? isResuming

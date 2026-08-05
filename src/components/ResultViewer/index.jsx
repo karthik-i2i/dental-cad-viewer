@@ -157,6 +157,7 @@ const ResultViewer = ({
     files: runFiles,
     error: runError,
     connectionLost,
+    confirmedPollSnapshot,
   } = useRunPolling(activeRunId, {
     preserveStateOnRunChange: preserveRunState,
     // resumeStep + 1 keeps the retried stage visible (progressStep < currentStep).
@@ -172,15 +173,20 @@ const ResultViewer = ({
     setRunSnapshot({ status: runStatus, currentStep: runCurrentStep });
   }, [runStatus, runCurrentStep, setRunSnapshot]);
 
-  // End resume download hand-off only after the new run is seeded with
-  // files[] = [] (preserve path). Status=running alone is unsafe mid-pipeline
-  // because the previous run was already running.
+  // End resume download hand-off after the first confirmed GET for the new
+  // activeRunId (atomic snapshot from useRunPolling). Shared run_dir may
+  // return a full files[] immediately — do not wait for empty files[].
   useEffect(() => {
     if (!resumeTransition) return;
-    if (runStatus === RUN_STATUS.RUNNING && runFiles.length === 0) {
+    if (confirmedPollSnapshot?.runId === activeRunId) {
       endResumeTransition();
     }
-  }, [resumeTransition, runStatus, runFiles.length, endResumeTransition]);
+  }, [
+    resumeTransition,
+    confirmedPollSnapshot,
+    activeRunId,
+    endResumeTransition,
+  ]);
 
   const { downloadedFiles, invalidateIdentities } = useRunFiles(
     activeRunId,
@@ -220,6 +226,10 @@ const ResultViewer = ({
     setDownloadsReadyFlag(downloadsReady);
   }, [downloadsReady]);
 
+  // Visual bar reached 100% — fed into useRunLoadingState so the 2s reveal
+  // hold starts after the user sees completion (not at forceOpening).
+  const [displayComplete, setDisplayComplete] = useState(false);
+
   const {
     loadingMessage: backendLoadingMessage,
     milestoneId: backendMilestoneId,
@@ -234,6 +244,7 @@ const ResultViewer = ({
     preserveViewer: preserveRunState,
     resumeSessionActive,
     resumeStep,
+    displayComplete,
   });
 
   const {
@@ -261,19 +272,24 @@ const ResultViewer = ({
   const canRender = canRenderBackend || canRenderSimulated;
 
   // Presentation-only soft-fill while the fresh-run loading screen is visible.
-  // Reveal still depends solely on viewerReady from useRunLoadingState.
+  // Reveal waits for displayComplete + LOADING_COMPLETE_HOLD_MS.
   const isBackendLoadingScreen =
     usingBackendProgress && Boolean(scanData) && !viewerReady;
 
-  const { displayPercent } = useDisplayProgress({
-    enabled: isBackendLoadingScreen,
-    resetKey: activeRunId,
-    hasRunId: Boolean(activeRunId),
-    status: runStatus,
-    currentStep: runCurrentStep,
-    filesReady: backendFilesReady,
-    milestoneId: backendMilestoneId,
-  });
+  const { displayPercent, displayComplete: visualComplete } =
+    useDisplayProgress({
+      enabled: isBackendLoadingScreen,
+      resetKey: activeRunId,
+      hasRunId: Boolean(activeRunId),
+      status: runStatus,
+      currentStep: runCurrentStep,
+      filesReady: backendFilesReady,
+      milestoneId: backendMilestoneId,
+    });
+
+  useEffect(() => {
+    setDisplayComplete(visualComplete);
+  }, [visualComplete]);
 
   const {
     progressIndex,
@@ -547,32 +563,24 @@ const ResultViewer = ({
         </p>
       ) : null}
 
-      <div className={styles.viewerContainer}>
+      <div
+        className={`${styles.viewerContainer}${
+          canRender ? ` ${styles.hasExplorer}` : ''
+        }`}
+      >
         <div className={styles.viewerInner}>
           {canRender ? (
-            <>
-              <div className={styles.viewerLayout}>
-                <div className={styles.viewerPane}>
-                  <STLViewer
-                    key={viewerKey}
-                    stlUrls={selectedPaths}
-                    accentColor={accentColor}
-                    background="#07111F"
-                    autoRotate={autoRotate}
-                    showGrid={false}
-                    enablePan={true}
-                  />
-                </div>
-                <ModelExplorer
-                  sections={usingBackendProgress ? visibleGroups : undefined}
-                  files={usingBackendProgress ? undefined : STL_FILES}
-                  groups={usingBackendProgress ? undefined : MODEL_GROUPS}
-                  selectedFiles={selectedFiles}
-                  onToggle={toggleFileSelection}
-                  onToggleGroup={toggleGroupSelection}
-                />
-              </div>
-            </>
+            <div className={styles.viewerPane}>
+              <STLViewer
+                key={viewerKey}
+                stlUrls={selectedPaths}
+                accentColor={accentColor}
+                background="#07111F"
+                autoRotate={autoRotate}
+                showGrid={false}
+                enablePan={true}
+              />
+            </div>
           ) : isWaitingForResult ? (
             <ProgressState
               progressPercentage={progressPercentage}
@@ -595,7 +603,6 @@ const ResultViewer = ({
               formatOption={formatOption}
             />
           )}
-
         </div>
 
         <ViewerToolbar
@@ -606,6 +613,17 @@ const ResultViewer = ({
           onToggleRotate={() => setAutoRotate((v) => !v)}
           onReset={handleReset}
         />
+
+        {canRender ? (
+          <ModelExplorer
+            sections={usingBackendProgress ? visibleGroups : undefined}
+            files={usingBackendProgress ? undefined : STL_FILES}
+            groups={usingBackendProgress ? undefined : MODEL_GROUPS}
+            selectedFiles={selectedFiles}
+            onToggle={toggleFileSelection}
+            onToggleGroup={toggleGroupSelection}
+          />
+        ) : null}
       </div>
 
       <ConfirmModal
